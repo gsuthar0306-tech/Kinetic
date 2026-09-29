@@ -1,0 +1,23 @@
+# Frontend
+Frontend/node_modules/
+Frontend/dist/
+
+# Backend
+Backend/**/bin/
+Backend/**/obj/
+Backend/**/.vs/
+
+# Visual Studio
+.vs/
+
+# VS Code
+.vscode/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# OS
+Thumbs.db
+.DS_Store

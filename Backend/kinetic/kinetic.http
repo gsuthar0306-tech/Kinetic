@@ -1,0 +1,6 @@
+@kinetic_HostAddress = http://localhost:5250
+
+GET {{kinetic_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

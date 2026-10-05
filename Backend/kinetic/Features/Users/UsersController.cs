@@ -27,13 +27,13 @@ namespace Kinetic.Features.Users
 
         }
 
-        [Authorize(Roles = "Admin")]
+        [Authorize]
         [HttpGet]
         public async Task<ActionResult<List<UserDto>>> GetAll()
         {
             var users = await _service.GetAllAsync();
 
-            var dtos = users.Select(user => new UserDto
+            var dtos = users.Select(static user => new UserDto
             {
                 Id = user.Id.ToString(),
                 Firstname = user.Firstname,
@@ -42,6 +42,7 @@ namespace Kinetic.Features.Users
                 Number = user.Number,
                 Address = user.Address,
                 Email = user.Email,
+                Role = user.Role,
                 CreatedAt = user.CreatedAt,
                 UpdatedAt = user.UpdatedAt
             }).ToList();
@@ -58,19 +59,6 @@ namespace Kinetic.Features.Users
 
             if (user == null)
                 return NotFound($"User with id '{id}' not found.");
-
-            // var dto = new UserDto
-            // {
-            //     Id = user.Id.ToString(),
-            //     Firstname = user.Firstname,
-            //     Lastname = user.Lastname,
-            //     Age = user.Age,
-            //     Number = user.Number,
-            //     Address = user.Address,
-            //     Email = user.Email,
-            //     CreatedAt = user.CreatedAt,
-            //     UpdatedAt = user.UpdatedAt
-            // };
 
             return Ok(ToDto(user));
         }
@@ -211,6 +199,7 @@ namespace Kinetic.Features.Users
                 Number = user.Number,
                 Address = user.Address,
                 Email = user.Email,
+                Role = user.Role,
                 CreatedAt = user.CreatedAt,
                 UpdatedAt = user.UpdatedAt
             };

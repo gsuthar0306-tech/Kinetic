@@ -8,53 +8,53 @@ import {
 
 import type { AuthSession, AuthUser } from "@/features/auth/auth.types";
 
-type AuthContextType = {
+import {
+  getAuthSession,
+  removeAuthSession,
+  saveAuthSession,
+} from "@/features/auth/authStorage";
+
+interface AuthContextType {
   user: AuthUser | null;
+  token: string | null;
+  refreshToken: string | null;
   isAuthenticated: boolean;
-  login: (Session: AuthSession) => void;
+  login: (session: AuthSession) => void;
   logout: () => void;
-};
+}
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const SESSION_KEY = "kinetic-session";
-
-type AuthProviderProps = {
+interface AuthProviderProps {
   children: ReactNode;
-};
+}
 
 export function AuthProvider({ children }: AuthProviderProps) {
-  const [user, setUser] = useState<AuthUser | null>(null);
+  const [session, setSession] = useState<AuthSession | null>(null);
 
   useEffect(() => {
-    const storedSession = localStorage.getItem(SESSION_KEY);
+    const storedSession = getAuthSession();
 
-    if (!storedSession) {
-      return;
-    }
-
-    try {
-      const session: AuthSession = JSON.parse(storedSession);
-
-      setUser(session.user);
-    } catch {
-      localStorage.removeItem(SESSION_KEY);
+    if (storedSession) {
+      setSession(storedSession);
     }
   }, []);
 
-  const login = (session: AuthSession) => {
-    localStorage.setItem(SESSION_KEY, JSON.stringify(session));
-    setUser(session.user);
+  const login = (newSession: AuthSession) => {
+    saveAuthSession(newSession);
+    setSession(newSession);
   };
 
   const logout = () => {
-    localStorage.removeItem(SESSION_KEY);
-    setUser(null);
+    removeAuthSession();
+    setSession(null);
   };
 
   const value: AuthContextType = {
-    user,
-    isAuthenticated: user !== null,
+    user: session?.user ?? null,
+    token: session?.token ?? null,
+    refreshToken: session?.refreshToken ?? null,
+    isAuthenticated: session !== null,
     login,
     logout,
   };
@@ -66,7 +66,7 @@ export function useAuth() {
   const context = useContext(AuthContext);
 
   if (!context) {
-    throw new Error("useAuth must be used inside an Authprovider");
+    throw new Error("useAuth must be used inside an AuthProvider");
   }
 
   return context;

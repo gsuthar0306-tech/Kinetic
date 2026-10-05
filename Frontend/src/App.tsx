@@ -32,7 +32,7 @@ import ProtectedRoute from "./features/auth/ProtectedRoute";
 
 import { Toaster } from "./components/ui/sonner";
 import Order from "./features/UserProfile/components/Order";
-import SAndpassword from "./features/UserProfile/components/Sandpassword";
+import SAndpassword from "./features/UserProfile/components/SAndpassword";
 
 function App() {
   return (

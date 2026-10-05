@@ -44,6 +44,10 @@ const Collections = () => {
 
   const navigate = useNavigate();
 
+  const handleProductClick = (product: Product) => {
+    navigate(`/product/${product.id}`);
+  };
+
   useEffect(() => {
     let isMounted = true;
 
@@ -115,11 +119,7 @@ const Collections = () => {
                   <button
                     type="button"
                     aria-label={`Explore ${collection.title}`}
-                    onClick={() => {
-                      if (product) {
-                        navigate(`/product/${product.id}`);
-                      }
-                    }}
+                    onClick={() => product && handleProductClick(product)}
                     className="grid size-9 shrink-0 place-items-center rounded-full bg-white/25 text-white backdrop-blur transition-colors group-hover:bg-white group-hover:text-slate-950"
                   >
                     <ArrowRight className="size-4" />

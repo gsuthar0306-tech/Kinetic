@@ -1,49 +1,26 @@
-export type StoredAccount = {
-  id: string;
-  name: string;
-  email: string;
-  password: string;
-  role: "user" | "admin";
-};
+import type { AuthSession } from "@/features/auth/auth.types";
 
-const ACCOUNTS_KEY = "kinetic-account";
+const SESSION_KEY = "kinetic-session";
 
-export function getStoredAccounts(): StoredAccount[] {
-  const storedAccounts = localStorage.getItem(ACCOUNTS_KEY);
+export function getAuthSession(): AuthSession | null {
+  const storedSession = sessionStorage.getItem(SESSION_KEY);
 
-  if (!storedAccounts) {
-    return [];
+  if (!storedSession) {
+    return null;
   }
 
   try {
-    const parsed: unknown = JSON.parse(storedAccounts);
-
-    if (!Array.isArray(parsed)) {
-      throw new Error("Stored accounts must be an array.");
-    }
-
-    return parsed.filter(isStoredAccount);
+    return JSON.parse(storedSession) as AuthSession;
   } catch {
-    localStorage.removeItem(ACCOUNTS_KEY);
-    return [];
+    sessionStorage.removeItem(SESSION_KEY);
+    return null;
   }
 }
 
-export function saveStoredAccounts(accounts: StoredAccount[]) {
-  localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(accounts));
+export function saveAuthSession(session: AuthSession) {
+  sessionStorage.setItem(SESSION_KEY, JSON.stringify(session));
 }
 
-function isStoredAccount(value: unknown): value is StoredAccount {
-  if (!value || typeof value !== "object") {
-    return false;
-  }
-
-  const account = value as Record<string, unknown>;
-
-  return (
-    typeof account.id === "string" &&
-    typeof account.name === "string" &&
-    typeof account.email === "string" &&
-    typeof account.password === "string"
-  );
+export function removeAuthSession() {
+  sessionStorage.removeItem(SESSION_KEY);
 }

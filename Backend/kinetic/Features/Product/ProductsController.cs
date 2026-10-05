@@ -18,16 +18,7 @@ namespace Kinetic.Features.Product
         public async Task<ActionResult<List<ProductDto>>> GetAll()
         {
             var products = await _service.GetAllAsync();
-            var dtos = products.Select(p => new ProductDto
-            {
-                Id = p.Id.ToString(),
-                Name = p.Name,
-                Description = p.Description,
-                Price = p.Price,
-                Quantity = p.Quantity,
-                CreatedAt = p.CreatedAt,
-                UpdatedAt = p.UpdatedAt
-            }).ToList();
+            var dtos = products.Select(MapToDto).ToList();
             return Ok(dtos);
         }
 
@@ -38,49 +29,45 @@ namespace Kinetic.Features.Product
             if (product == null)
                 return NotFound($"Product with id '{id}' not found.");
 
-            var dto = new ProductDto
-            {
-                Id = product.Id.ToString(),
-                Name = product.Name,
-                Description = product.Description,
-                Price = product.Price,
-                Quantity = product.Quantity,
-                CreatedAt = product.CreatedAt,
-                UpdatedAt = product.UpdatedAt
-            };
-            return Ok(dto);
+            return Ok(MapToDto(product));
         }
 
         [Authorize(Roles = "Admin")]
         [HttpPost]
         public async Task<ActionResult<ProductDto>> Create([FromBody] CreateProductDto createDto)
         {
-            if (string.IsNullOrWhiteSpace(createDto.Name))
-                return BadRequest("Product name is required.");
+            if (string.IsNullOrWhiteSpace(createDto.Title))
+                return BadRequest("Product title is required.");
 
             if (createDto.Price <= 0)
                 return BadRequest("Product price must be greater than zero.");
 
+            if (createDto.Stock < 0)
+                return BadRequest("Product stock cannot be negative.");
+
             var product = new Product
             {
-                Name = createDto.Name,
-                Description = createDto.Description,
-                Price = createDto.Price,
-                Quantity = createDto.Quantity
+                dummyJsonId = createDto.DummyJsonId,
+                images = createDto.Images,
+                thumbnail = createDto.Thumbnail,
+                tittle = createDto.Title,
+                discription = createDto.Description,
+                price = createDto.Price,
+                discountPercentage = createDto.DiscountPercentage,
+                category = createDto.Category,
+                stock = createDto.Stock,
+                rating = createDto.Rating,
+                brand = createDto.Brand,
+
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
             };
 
             var createdProduct = await _service.CreateAsync(product);
-            var dto = new ProductDto
-            {
-                Id = createdProduct.Id.ToString(),
-                Name = createdProduct.Name,
-                Description = createdProduct.Description,
-                Price = createdProduct.Price,
-                Quantity = createdProduct.Quantity,
-                CreatedAt = createdProduct.CreatedAt,
-                UpdatedAt = createdProduct.UpdatedAt
-            };
-            return CreatedAtAction(nameof(GetById), new { id = createdProduct.Id.ToString() }, dto);
+            return CreatedAtAction(
+                nameof(GetById),
+                new { id = createdProduct.Id.ToString() },
+                MapToDto(createdProduct));
         }
 
         [Authorize(Roles = "Admin")]
@@ -91,26 +78,32 @@ namespace Kinetic.Features.Product
             if (product == null)
                 return NotFound($"Product with id '{id}' not found.");
 
-            product.Name = updateDto.Name;
-            product.Description = updateDto.Description;
-            product.Price = updateDto.Price;
-            product.Quantity = updateDto.Quantity;
+            if (string.IsNullOrWhiteSpace(updateDto.Title))
+                return BadRequest("Product title is required.");
+
+            if (updateDto.Price <= 0)
+                return BadRequest("Product price must be greater than zero.");
+
+            if (updateDto.Stock < 0)
+                return BadRequest("Product stock cannot be negative.");
+
+            product.dummyJsonId = updateDto.DummyJsonId;
+            product.images = updateDto.Images;
+            product.thumbnail = updateDto.Thumbnail;
+            product.tittle = updateDto.Title;
+            product.discription = updateDto.Description;
+            product.price = updateDto.Price;
+            product.discountPercentage = updateDto.DiscountPercentage;
+            product.category = updateDto.Category;
+            product.stock = updateDto.Stock;
+            product.rating = updateDto.Rating;
+            product.brand = updateDto.Brand;
 
             var updatedProduct = await _service.UpdateAsync(id, product);
             if (updatedProduct == null)
                 return NotFound($"Product with id '{id}' not found.");
 
-            var dto = new ProductDto
-            {
-                Id = updatedProduct.Id.ToString(),
-                Name = updatedProduct.Name,
-                Description = updatedProduct.Description,
-                Price = updatedProduct.Price,
-                Quantity = updatedProduct.Quantity,
-                CreatedAt = updatedProduct.CreatedAt,
-                UpdatedAt = updatedProduct.UpdatedAt
-            };
-            return Ok(dto);
+            return Ok(MapToDto(updatedProduct));
         }
 
         [Authorize(Roles = "Admin")]
@@ -122,6 +115,25 @@ namespace Kinetic.Features.Product
                 return NotFound($"Product with id '{id}' not found.");
 
             return NoContent();
+        }
+
+        private static ProductDto MapToDto(Product product)
+        {
+            return new ProductDto
+            {
+                Id = product.Id.ToString(),
+                DummyJsonId = product.dummyJsonId,
+                Images = product.images,
+                Thumbnail = product.thumbnail,
+                Title = product.tittle,
+                Description = product.discription,
+                Price = product.price,
+                DiscountPercentage = product.discountPercentage,
+                Category = product.category,
+                Stock = product.stock,
+                Rating = product.rating,
+                Brand = product.brand
+            };
         }
     }
 }

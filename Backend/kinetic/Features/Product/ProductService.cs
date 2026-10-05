@@ -16,7 +16,7 @@ namespace Kinetic.Features.Product
         // Get all products
         public async Task<List<Product>> GetAllAsync()
         {
-            return await _collection.Find(_ => true).ToListAsync();
+            return await _collection.Find(static _ => true).ToListAsync();
         }
 
         // Get product by ID
@@ -31,8 +31,6 @@ namespace Kinetic.Features.Product
         // Create product
         public async Task<Product> CreateAsync(Product product)
         {
-            product.CreatedAt = DateTime.UtcNow;
-            product.UpdatedAt = DateTime.UtcNow;
             await _collection.InsertOneAsync(product);
             return product;
         }
@@ -43,7 +41,6 @@ namespace Kinetic.Features.Product
             if (!ObjectId.TryParse(id, out var productId))
                 return null;
 
-            updatedProduct.UpdatedAt = DateTime.UtcNow;
             updatedProduct.Id = productId;
             var result = await _collection.FindOneAndReplaceAsync(
                 p => p.Id == productId,

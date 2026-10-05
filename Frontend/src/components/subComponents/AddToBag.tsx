@@ -16,7 +16,7 @@ const AddToBag = ({ product, variant = "card" }: AddToBagProps) => {
   const inCart = isInCart(product.id);
   const navigate = useNavigate();
 
-  const session = localStorage.getItem("kinetic-session");
+  const session = sessionStorage.getItem("kinetic-session");
   const isLoggedIn = Boolean(session);
 
   const handleClick = () => {

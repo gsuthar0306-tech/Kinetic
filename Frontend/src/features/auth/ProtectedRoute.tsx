@@ -7,7 +7,7 @@ type ProtectedRouteProps = {
   allowedRoles?: UserRole[];
 };
 
-const DEV_MODE = true;
+// const DEV_MODE = true;
 
 export default function ProtectedRoute({ allowedRoles }: ProtectedRouteProps) {
   const { user, isAuthenticated } = useAuth();
@@ -17,7 +17,7 @@ export default function ProtectedRoute({ allowedRoles }: ProtectedRouteProps) {
     return <Navigate to="/login" replace state={{ from: location }} />;
   }
 
-  if (!DEV_MODE && allowedRoles && user && !allowedRoles.includes(user.role)) {
+  if (allowedRoles && user && !allowedRoles.includes(user.role)) {
     return <Navigate to="/" replace />;
   }
 

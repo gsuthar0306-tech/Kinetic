@@ -17,7 +17,7 @@ const AddtoHeart = ({ product, variant = "card" }: AddtoHeartProps) => {
 
   const favorite = isFavorite(product.id);
 
-  const session = localStorage.getItem("kinetic-session");
+  const session = sessionStorage.getItem("kinetic-session");
   const isLoggedIn = Boolean(session);
 
   const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {

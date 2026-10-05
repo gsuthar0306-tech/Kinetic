@@ -1,6 +1,7 @@
 import { useNavigate, NavLink } from "react-router";
 import { Heart, Menu, Search, ShoppingBag, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/context/AuthContext";
 import {
   Sheet,
   SheetContent,
@@ -28,20 +29,15 @@ const navLinks: NavLinkItem[] = [
 
 function Navbar() {
   const navigate = useNavigate();
-
-  const session = localStorage.getItem("kinetic-session");
-  const isLoggedIn = Boolean(session);
+  const { user, isAuthenticated } = useAuth();
 
   const handleUserClick = () => {
-    const raw = localStorage.getItem("kinetic-session");
-
-    if (!raw) {
+    if (!isAuthenticated) {
       navigate("/login");
       return;
     }
-    const session = JSON.parse(raw);
 
-    if (session.type === "Admin") {
+    if (user?.role === "admin") {
       navigate("/admin");
     } else {
       navigate("/profile");
@@ -104,7 +100,7 @@ function Navbar() {
           <Button
             size="icon"
             onClick={handleUserClick}
-            aria-label={isLoggedIn ? "Profile" : "Login"}
+            aria-label={isAuthenticated ? "Profile" : "Login"}
             className="rounded-full p-2.5 transition-colors hover:bg-slate-100"
           >
             <UserRound className="size-5" />

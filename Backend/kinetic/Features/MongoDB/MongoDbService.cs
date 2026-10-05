@@ -9,7 +9,8 @@ namespace Kinetic.Features.MongoDB
 
         public MongoDbService(IConfiguration configuration, IOptions<MongoDbSettings> settings)
         {
-            string connectionString = configuration.GetConnectionString("MongoDB") ?? throw new InvalidOperationException("MongoDB connection string is missing.");
+            string connectionString = configuration.GetConnectionString("MongoDB") ??
+             throw new InvalidOperationException("MongoDB connection string is missing.");
 
             MongoClient client = new MongoClient(connectionString);
 

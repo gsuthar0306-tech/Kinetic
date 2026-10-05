@@ -19,7 +19,7 @@ namespace Kinetic.Features.Users
         public async Task<List<User>> GetAllAsync()
         {
             return await _collection
-                .Find(_ => true)
+                .Find(static _ => true)
                 .ToListAsync();
         }
 
@@ -53,7 +53,6 @@ namespace Kinetic.Features.Users
                 Lastname = registerUserDto.Lastname,
                 Age = registerUserDto.Age,
                 Number = registerUserDto.Number,
-                Address = registerUserDto.Address,
                 Email = registerUserDto.Email,
 
                 PasswordHash = _passwordService.HashPassword(registerUserDto.Password),

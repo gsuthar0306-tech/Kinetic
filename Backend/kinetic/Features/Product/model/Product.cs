@@ -6,20 +6,21 @@ namespace Kinetic.Features.Product
     public class Product
     {
         [BsonId]
-        public ObjectId Id { get; set; }
+        [BsonRepresentation(BsonType.ObjectId)]
+        public ObjectId Id { get; set; } = ObjectId.GenerateNewId();
 
-        [BsonElement("name")]
-        public string Name { get; set; } = string.Empty;
-
-        [BsonElement("description")]
-        public string Description { get; set; } = string.Empty;
-
-        [BsonElement("price")]
-        public decimal Price { get; set; }
-
-        [BsonElement("quantity")]
-        public int Quantity { get; set; }
-
+        [BsonIgnoreIfNull]
+        public int? dummyJsonId { get; set; }
+        public List<string> images { get; set; } = new();
+        public string thumbnail { get; set; } = string.Empty;
+        public string tittle { get; set; } = string.Empty;
+        public string discription { get; set; } = string.Empty;
+        public decimal price { get; set; }
+        public decimal discountPercentage { get; set; }
+        public string category { get; set; } = string.Empty;
+        public int stock { get; set; }
+        public double rating { get; set; }
+        public string brand { get; set; } = string.Empty;
         [BsonElement("createdAt")]
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
@@ -27,3 +28,5 @@ namespace Kinetic.Features.Product
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
     }
 }
+
+

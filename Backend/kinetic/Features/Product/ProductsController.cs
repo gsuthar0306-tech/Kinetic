@@ -8,18 +8,47 @@ namespace Kinetic.Features.Product
     public class ProductsController : ControllerBase
     {
         private readonly ProductService _service;
+        private readonly ILogger<ProductsController> _logger;
 
-        public ProductsController(ProductService service)
+        public ProductsController(
+            ProductService service,
+            ILogger<ProductsController> logger)
         {
             _service = service;
+            _logger = logger;
         }
 
         [HttpGet]
-        public async Task<ActionResult<List<ProductDto>>> GetAll()
+        public async Task<ActionResult<PagedProductsDto>> GetAll(
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 24,
+            [FromQuery] string? categories = null)
         {
-            var products = await _service.GetAllAsync();
-            var dtos = products.Select(MapToDto).ToList();
-            return Ok(dtos);
+            if (page < 1)
+                return BadRequest("Page must be greater than zero.");
+
+            if (pageSize < 1 || pageSize > 100)
+                return BadRequest("Page size must be between 1 and 100.");
+
+            var selectedCategories = categories?
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            var (products, totalCount) = await _service.GetPageAsync(
+                page,
+                pageSize,
+                selectedCategories);
+            return Ok(new PagedProductsDto
+            {
+                Items = products.Select(MapToDto).ToList(),
+                TotalCount = totalCount,
+                Page = page,
+                PageSize = pageSize
+            });
+        }
+
+        [HttpGet]
+        public async Task<ActionResult<List<string>>> GetCategories()
+        {
+            return Ok(await _service.GetCategoriesAsync());
         }
 
         [HttpGet("{id}")]
@@ -36,38 +65,21 @@ namespace Kinetic.Features.Product
         [HttpPost]
         public async Task<ActionResult<ProductDto>> Create([FromBody] CreateProductDto createDto)
         {
-            if (string.IsNullOrWhiteSpace(createDto.Title))
-                return BadRequest("Product title is required.");
+            if (string.IsNullOrWhiteSpace(createDto.Name))
+                return BadRequest("Product name is required.");
 
-            if (createDto.Price <= 0)
-                return BadRequest("Product price must be greater than zero.");
-
-            if (createDto.Stock < 0)
-                return BadRequest("Product stock cannot be negative.");
-
-            var product = new Product
+            try
             {
-                dummyJsonId = createDto.DummyJsonId,
-                images = createDto.Images,
-                thumbnail = createDto.Thumbnail,
-                tittle = createDto.Title,
-                discription = createDto.Description,
-                price = createDto.Price,
-                discountPercentage = createDto.DiscountPercentage,
-                category = createDto.Category,
-                stock = createDto.Stock,
-                rating = createDto.Rating,
-                brand = createDto.Brand,
-
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
-            };
-
-            var createdProduct = await _service.CreateAsync(product);
-            return CreatedAtAction(
-                nameof(GetById),
-                new { id = createdProduct.Id.ToString() },
-                MapToDto(createdProduct));
+                var createdProduct = await _service.CreateAsync(createDto);
+                return CreatedAtAction(
+                    nameof(GetById),
+                    new { id = createdProduct.Id.ToString() },
+                    MapToDto(createdProduct));
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Conflict(ex.Message);
+            }
         }
 
         [Authorize(Roles = "Admin")]
@@ -78,26 +90,19 @@ namespace Kinetic.Features.Product
             if (product == null)
                 return NotFound($"Product with id '{id}' not found.");
 
-            if (string.IsNullOrWhiteSpace(updateDto.Title))
-                return BadRequest("Product title is required.");
+            if (string.IsNullOrWhiteSpace(updateDto.Name))
+                return BadRequest("Product name is required.");
 
-            if (updateDto.Price <= 0)
-                return BadRequest("Product price must be greater than zero.");
-
-            if (updateDto.Stock < 0)
-                return BadRequest("Product stock cannot be negative.");
-
-            product.dummyJsonId = updateDto.DummyJsonId;
-            product.images = updateDto.Images;
-            product.thumbnail = updateDto.Thumbnail;
-            product.tittle = updateDto.Title;
-            product.discription = updateDto.Description;
-            product.price = updateDto.Price;
-            product.discountPercentage = updateDto.DiscountPercentage;
-            product.category = updateDto.Category;
-            product.stock = updateDto.Stock;
-            product.rating = updateDto.Rating;
-            product.brand = updateDto.Brand;
+            product.Name = updateDto.Name;
+            product.MainCategory = updateDto.MainCategory;
+            product.SubCategory = updateDto.SubCategory;
+            product.Image = updateDto.Image;
+            product.Images = updateDto.Images;
+            product.Link = updateDto.Link;
+            product.Ratings = updateDto.Ratings;
+            product.NoOfRatings = updateDto.NoOfRatings;
+            product.DiscountPrice = updateDto.DiscountPrice;
+            product.ActualPrice = updateDto.ActualPrice;
 
             var updatedProduct = await _service.UpdateAsync(id, product);
             if (updatedProduct == null)
@@ -117,22 +122,37 @@ namespace Kinetic.Features.Product
             return NoContent();
         }
 
-        private static ProductDto MapToDto(Product product)
+        private ProductDto MapToDto(Product product)
         {
+            if (!ProductService.TryParseRating(product.Ratings, out var rating))
+            {
+                _logger.LogWarning(
+                    "Product {ProductId} has an invalid ratings value {Ratings}; returning a rating of 0.",
+                    product.Id,
+                    product.Ratings);
+            }
+
+            if (!ProductService.TryParseRatingCount(product.NoOfRatings, out var ratingCount))
+            {
+                _logger.LogWarning(
+                    "Product {ProductId} has an invalid no_of_ratings value {RatingCount}; returning a count of 0.",
+                    product.Id,
+                    product.NoOfRatings);
+            }
+
             return new ProductDto
             {
                 Id = product.Id.ToString(),
-                DummyJsonId = product.dummyJsonId,
-                Images = product.images,
-                Thumbnail = product.thumbnail,
-                Title = product.tittle,
-                Description = product.discription,
-                Price = product.price,
-                DiscountPercentage = product.discountPercentage,
-                Category = product.category,
-                Stock = product.stock,
-                Rating = product.rating,
-                Brand = product.brand
+                Name = product.Name,
+                MainCategory = product.MainCategory,
+                SubCategory = product.SubCategory,
+                Image = product.Image,
+                Images = product.Images,
+                Link = product.Link,
+                Ratings = rating,
+                NoOfRatings = ratingCount,
+                DiscountPrice = product.DiscountPrice,
+                ActualPrice = product.ActualPrice
             };
         }
     }

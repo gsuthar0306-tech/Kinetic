@@ -11,7 +11,7 @@ import type { Product } from "@/services/products";
 type FavoritesContextType = {
   favorites: Product[];
   toggleFavorite: (product: Product) => void;
-  isFavorite: (productId: number) => boolean;
+  isFavorite: (productId: string) => boolean;
 };
 
 const FavoritesContext = createContext<FavoritesContextType | null>(null);
@@ -54,7 +54,7 @@ export function FavoritesProvider({ children }: FavoritesProviderProps) {
     });
   };
 
-  const isFavorite = (productId: number) => {
+  const isFavorite = (productId: string) => {
     return favorites.some((fav) => fav.id === productId);
   };
 

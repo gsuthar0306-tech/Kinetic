@@ -10,6 +10,7 @@ import {
   Package,
   Settings,
   ShoppingBag,
+  Users,
 } from "lucide-react";
 import SinghOut from "@/components/subComponents/SinghOut";
 
@@ -20,6 +21,11 @@ const SideNavbarLinks: SideNavbarItem[] = [
     label: "DashBoard",
     href: "/admin",
     icon: LayoutGrid,
+  },
+  {
+    label: "AllUsers",
+    href: "/admin/allusers",
+    icon: Users,
   },
   {
     label: "Orders",

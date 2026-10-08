@@ -2,13 +2,7 @@ import { Heart, Star, Trash2 } from "lucide-react";
 
 import { useFavorites } from "@/context/FavoritesContext";
 import AddToBag from "@/components/subComponents/AddToBag";
-
-const formatPrice = (price: number) =>
-  new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 0,
-  }).format(price);
+import { formatRupees } from "@/services/products";
 
 const Favorites = () => {
   const { favorites, toggleFavorite } = useFavorites();
@@ -99,7 +93,9 @@ const Favorites = () => {
 
               <div className="flex flex-1 flex-col pt-5">
                 <span className="w-fit rounded-full bg-gray-100 px-3 py-1 text-[11px] font-medium uppercase tracking-wide text-gray-500">
-                  {product.category || "Uncategorized"}
+                  {product.subCategory
+                    ? `${product.category} · ${product.subCategory}`
+                    : product.category || "Uncategorized"}
                 </span>
 
                 <h2 className="mt-3 line-clamp-2 min-h-[48px] text-base font-semibold leading-6 text-gray-900">
@@ -108,7 +104,7 @@ const Favorites = () => {
 
                 <div className="mt-3 flex items-center justify-between">
                   <span className="text-lg font-bold text-gray-900">
-                    {formatPrice(product.price || 0)}
+                    {formatRupees(product.price || 0)}
                   </span>
 
                   <span className="text-xs text-gray-400">

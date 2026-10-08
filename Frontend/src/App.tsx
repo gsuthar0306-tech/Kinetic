@@ -33,6 +33,7 @@ import ProtectedRoute from "./features/auth/ProtectedRoute";
 import { Toaster } from "./components/ui/sonner";
 import Order from "./features/UserProfile/components/Order";
 import SAndpassword from "./features/UserProfile/components/SAndpassword";
+import AdminAllusers from "./features/Admin/components/AdminAllusers";
 
 function App() {
   return (
@@ -72,6 +73,7 @@ function App() {
                 <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
                   <Route element={<AdminLayout />}>
                     <Route path="/admin" element={<Admin />} />
+                    <Route path="/admin/allusers" element={<AdminAllusers />} />
                     <Route path="/admin/order" element={<AdminOrders />} />
                     <Route
                       path="/admin/inventory"

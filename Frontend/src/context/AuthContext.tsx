@@ -1,7 +1,6 @@
 import {
   createContext,
   useContext,
-  useEffect,
   useState,
   type ReactNode,
 } from "react";
@@ -30,15 +29,9 @@ interface AuthProviderProps {
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
-  const [session, setSession] = useState<AuthSession | null>(null);
-
-  useEffect(() => {
-    const storedSession = getAuthSession();
-
-    if (storedSession) {
-      setSession(storedSession);
-    }
-  }, []);
+  const [session, setSession] = useState<AuthSession | null>(() =>
+    getAuthSession(),
+  );
 
   const login = (newSession: AuthSession) => {
     saveAuthSession(newSession);

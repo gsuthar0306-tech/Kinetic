@@ -7,7 +7,7 @@ import { getElectronicProducts, type Product } from "@/services/products";
 type Collection = {
   title: string;
   description: string;
-  category: string;
+  subCategory: string;
   layout: string;
 };
 
@@ -15,25 +15,25 @@ const collections: Collection[] = [
   {
     title: "Performance Computing",
     description: "Workstations built for the most demanding tasks.",
-    category: "laptops",
+    subCategory: "Laptops",
     layout: "lg:col-span-2",
   },
   {
     title: "High-Fidelity Audio",
     description: "Immersive soundscapes.",
-    category: "mobile-accessories",
+    subCategory: "Speakers & Soundbars",
     layout: "",
   },
   {
     title: "Tablets & Displays",
     description: "Portable screens for everyday work.",
-    category: "tablets",
+    subCategory: "Tablets",
     layout: "",
   },
   {
     title: "Smartphones",
     description: "Connected technology that moves with you.",
-    category: "smartphones",
+    subCategory: "Smartphones",
     layout: "lg:col-span-2",
   },
 ];
@@ -51,9 +51,9 @@ const Collections = () => {
   useEffect(() => {
     let isMounted = true;
 
-    getElectronicProducts()
+    getElectronicProducts(1, 24)
       .then((data) => {
-        if (isMounted) setProducts(data);
+        if (isMounted) setProducts(data.items);
       })
       .catch(() => {
         if (isMounted) setHasError(true);
@@ -64,7 +64,13 @@ const Collections = () => {
     };
   }, []);
 
-  if (hasError) return null;
+  if (hasError) {
+    return (
+      <p role="alert" className="px-5 py-8 text-center text-sm text-red-700">
+        Could not load products for the collections.
+      </p>
+    );
+  }
 
   return (
     <section className="bg-slate-50 px-5 py-14 sm:px-8 sm:py-16 lg:py-20">
@@ -79,9 +85,12 @@ const Collections = () => {
 
         <div className="mt-8 grid gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 lg:grid-rows-[16.75rem_11.25rem]">
           {collections.map((collection) => {
-            const product = products.find(
-              ({ category }) => category === collection.category,
-            );
+            const product =
+              products.find(
+                ({ subCategory }) =>
+                  subCategory.toLowerCase() ===
+                  collection.subCategory.toLowerCase(),
+              ) ?? products[collections.indexOf(collection)];
 
             const image = product?.thumbnail;
 
@@ -94,11 +103,11 @@ const Collections = () => {
                   <img
                     src={image}
                     alt={product?.title ?? collection.title}
-                    className="absolute inset-0 h-full w-full bg-slate-100 object-contain p-3 transition duration-500 group-hover:scale-105 sm:p-5"
+                    className="absolute inset-0 h-full w-full bg-white object-contain p-3 transition duration-500 group-hover:scale-105 sm:p-5"
                   />
                 ) : (
                   <div
-                    className="absolute inset-0 animate-pulse bg-slate-200"
+                    className="absolute inset-0 animate-pulse bg-white"
                     aria-label={`Loading ${collection.title}`}
                   />
                 )}

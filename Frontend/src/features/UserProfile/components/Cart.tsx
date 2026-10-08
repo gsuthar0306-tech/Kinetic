@@ -1,12 +1,6 @@
 import { Minus, Plus, Trash2 } from "lucide-react";
 import { useCart } from "@/context/CartContext";
-
-const formatPrice = (price: number) =>
-  new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 0,
-  }).format(price);
+import { formatRupees } from "@/services/products";
 
 const Cart = () => {
   const { cartItems, removeFromCart, increaseQuantity, decreaseQuantity } =
@@ -61,7 +55,7 @@ const Cart = () => {
                     <h2 className="font-medium">{item.product.title}</h2>
 
                     <p className="mt-1 text-sm text-gray-500">
-                      {formatPrice(item.product.price)}
+                      {formatRupees(item.product.price)}
                     </p>
                   </div>
 
@@ -101,7 +95,7 @@ const Cart = () => {
 
                 <div className="hidden text-right sm:block">
                   <p className="font-medium">
-                    {formatPrice(item.product.price * item.quantity)}
+                    {formatRupees(item.product.price * item.quantity)}
                   </p>
                 </div>
               </div>
@@ -115,7 +109,7 @@ const Cart = () => {
               <div className="flex justify-between text-sm">
                 <span className="text-gray-500">Subtotal</span>
 
-                <span>{formatPrice(subtotal)}</span>
+                <span>{formatRupees(subtotal)}</span>
               </div>
 
               <div className="flex justify-between text-sm">
@@ -136,7 +130,7 @@ const Cart = () => {
                 <div className="flex justify-between">
                   <span className="font-medium">Total</span>
 
-                  <span className="font-semibold">{formatPrice(subtotal)}</span>
+                  <span className="font-semibold">{formatRupees(subtotal)}</span>
                 </div>
               </div>
 

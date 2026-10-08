@@ -10,10 +10,10 @@ type CartItem = {
 type CartContextType = {
   cartItems: CartItem[];
   addToCart: (product: Product) => void;
-  removeFromCart: (productId: number) => void;
-  increaseQuantity: (productId: number) => void;
-  decreaseQuantity: (productId: number) => void;
-  isInCart: (productId: number) => boolean;
+  removeFromCart: (productId: string) => void;
+  increaseQuantity: (productId: string) => void;
+  decreaseQuantity: (productId: string) => void;
+  isInCart: (productId: string) => boolean;
 };
 
 const CartContext = createContext<CartContextType | null>(null);
@@ -64,13 +64,13 @@ export function CartProvider({ children }: CartProviderProps) {
     });
   };
 
-  const removeFromCart = (productId: number) => {
+  const removeFromCart = (productId: string) => {
     setCartItems((currentItems) =>
       currentItems.filter((item) => item.product.id !== productId),
     );
   };
 
-  const increaseQuantity = (productId: number) => {
+  const increaseQuantity = (productId: string) => {
     setCartItems((currentItems) =>
       currentItems.map((item) =>
         item.product.id === productId
@@ -83,7 +83,7 @@ export function CartProvider({ children }: CartProviderProps) {
     );
   };
 
-  const decreaseQuantity = (productId: number) => {
+  const decreaseQuantity = (productId: string) => {
     setCartItems((currentItems) =>
       currentItems
         .map((item) =>
@@ -98,7 +98,7 @@ export function CartProvider({ children }: CartProviderProps) {
     );
   };
 
-  const isInCart = (productId: number) => {
+  const isInCart = (productId: string) => {
     return cartItems.some((item) => item.product.id === productId);
   };
 

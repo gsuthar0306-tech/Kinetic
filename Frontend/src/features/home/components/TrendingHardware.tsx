@@ -2,17 +2,17 @@ import { Star } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 
-import { getElectronicProducts, type Product } from "@/services/products";
+import {
+  formatRupees,
+  getElectronicProducts,
+  type Product,
+} from "@/services/products";
 
 import AddtoHeart from "@/components/subComponents/AddtoHeart";
 import AddToBag from "@/components/subComponents/AddToBag";
 
 const formatPrice = (price: number) =>
-  new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 0,
-  }).format(price);
+  formatRupees(price);
 
 const TrendingHardware = () => {
   const [products, setProducts] = useState<Product[]>([]);
@@ -22,13 +22,15 @@ const TrendingHardware = () => {
   useEffect(() => {
     let isMounted = true;
 
-    getElectronicProducts()
+    getElectronicProducts(1, 4)
       .then((data) => {
         if (isMounted) {
-          setProducts(data.slice(0, 4));
+          setProducts(data.items);
         }
       })
-      .catch(() => undefined);
+      .catch((error: unknown) => {
+        console.error("Failed to load trending products:", error);
+      });
 
     return () => {
       isMounted = false;
@@ -91,7 +93,9 @@ const TrendingHardware = () => {
 
                   <div className="px-1 pb-1 pt-3">
                     <p className="truncate text-[9px] font-semibold tracking-[0.14em] text-slate-400">
-                      {item?.category.replaceAll("-", " ") ?? "LOADING"}
+                      {item
+                        ? `${item.category} · ${item.subCategory}`
+                        : "LOADING"}
                     </p>
 
                     <h3 className="mt-1 truncate text-sm font-semibold text-slate-900">
@@ -99,9 +103,16 @@ const TrendingHardware = () => {
                     </h3>
 
                     <div className="mt-2 flex items-center justify-between">
-                      <span className="text-sm font-bold text-slate-950">
-                        {item ? formatPrice(item.price) : "—"}
-                      </span>
+                      <div className="flex flex-wrap items-baseline gap-2">
+                        <span className="text-sm font-bold text-slate-950">
+                          {item ? formatPrice(item.price) : "—"}
+                        </span>
+                        {item && item.actualPrice > item.price && (
+                          <span className="text-xs text-slate-400 line-through">
+                            {formatPrice(item.actualPrice)}
+                          </span>
+                        )}
+                      </div>
 
                       {item && (
                         <span className="flex items-center gap-1 text-[10px] text-slate-500">

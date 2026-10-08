@@ -39,14 +39,14 @@ const UnderNav = ({ sortBy, onSortChange, resultCount }: UnderNavProps) => {
 
         <ChevronRight className="size-3.5 text-slate-300" />
 
-        <span className="text-slate-700">Electronics</span>
+        <span className="text-slate-700">Products</span>
       </nav>
 
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <div className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
             <h2 className="text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl">
-              Computing gear
+              Product catalog
             </h2>
 
             <span className="text-sm text-slate-400">
@@ -55,7 +55,7 @@ const UnderNav = ({ sortBy, onSortChange, resultCount }: UnderNavProps) => {
           </div>
 
           <p className="mt-1 text-sm text-slate-500">
-            Browse computing products
+            Browse products from our catalog
           </p>
         </div>
 

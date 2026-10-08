@@ -2,18 +2,14 @@ import { useEffect, useState } from "react";
 import { ArrowLeft, Minus, Plus, Star } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 
-import { getProductById, type Product } from "@/services/products";
+import {
+  formatRupees,
+  getProductById,
+  type Product,
+} from "@/services/products";
 
-import { useFavorites } from "@/context/FavoritesContext";
 import AddtoHeart from "@/components/subComponents/AddtoHeart";
 import AddToBag from "@/components/subComponents/AddToBag";
-
-const formatPrice = (price: number) =>
-  new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 0,
-  }).format(price);
 
 const ProductDetails = () => {
   const { id } = useParams();
@@ -21,6 +17,7 @@ const ProductDetails = () => {
 
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
 
   const [selectedImage, setSelectedImage] = useState("");
 
@@ -33,22 +30,17 @@ const ProductDetails = () => {
         return;
       }
 
-      const productId = Number(id);
-
-      if (Number.isNaN(productId)) {
-        setLoading(false);
-        return;
-      }
-
-      const data = await getProductById(productId);
-
-      setProduct(data);
-
-      if (data) {
+      try {
+        const data = await getProductById(id);
+        setProduct(data);
         setSelectedImage(data.thumbnail);
+      } catch (error) {
+        console.error("Failed to load product:", error);
+        setLoadError(true);
+        setProduct(null);
+      } finally {
+        setLoading(false);
       }
-
-      setLoading(false);
     };
 
     loadProduct();
@@ -74,7 +66,11 @@ const ProductDetails = () => {
   if (!product) {
     return (
       <main className="flex min-h-96 flex-col items-center justify-center gap-4 p-6">
-        <p className="text-sm text-slate-500">Product not found.</p>
+        <p role={loadError ? "alert" : undefined} className="text-sm text-slate-500">
+          {loadError
+            ? "Could not load this product from the backend."
+            : "Product not found."}
+        </p>
 
         <button
           type="button"
@@ -163,9 +159,16 @@ const ProductDetails = () => {
             </span>
           </div>
 
-          <p className="mt-6 text-3xl font-bold text-slate-950">
-            {formatPrice(product.price)}
-          </p>
+          <div className="mt-6 flex items-baseline gap-3">
+            <p className="text-3xl font-bold text-slate-950">
+              {formatRupees(product.price)}
+            </p>
+            {product.actualPrice > product.price && (
+              <p className="text-lg text-slate-400 line-through">
+                {formatRupees(product.actualPrice)}
+              </p>
+            )}
+          </div>
 
           <div className="my-7 h-px bg-slate-200" />
 
@@ -230,6 +233,33 @@ const ProductDetails = () => {
                   {product.rating.toFixed(1)} / 5
                 </span>
               </div>
+
+              <div className="flex justify-between gap-4">
+                <span className="text-slate-500">Number of ratings</span>
+
+                <span className="font-medium text-slate-900">
+                  {product.noOfRatings.toLocaleString("en-IN")}
+                </span>
+              </div>
+
+              <div className="flex justify-between gap-4">
+                <span className="text-slate-500">Subcategory</span>
+
+                <span className="font-medium text-slate-900">
+                  {product.subCategory}
+                </span>
+              </div>
+
+              {product.link && (
+                <a
+                  href={product.link}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-5 text-sm font-semibold text-blue-700 underline underline-offset-4"
+                >
+                  View product listing
+                </a>
+              )}
             </div>
           </div>
         </div>

@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { X } from "lucide-react";
+import { getProductCategories } from "@/services/products";
 
 import {
   Accordion,
@@ -30,18 +31,11 @@ interface FilterSidebarProps {
   onFiltersChange: (filters: StoreFilters) => void;
 }
 
-const categories: Category[] = [
-  { label: "Computers & Laptops", value: "laptops" },
-  { label: "Smartphones", value: "smartphones" },
-  { label: "Tablets", value: "tablets" },
-  { label: "Mobile Accessories", value: "mobile-accessories" },
-];
-
 const priceRanges: { label: string; value: PriceRange }[] = [
-  { label: "Under $100", value: { min: 0, max: 99 } },
-  { label: "$100 to $500", value: { min: 100, max: 500 } },
-  { label: "$500 to $1,000", value: { min: 500, max: 1000 } },
-  { label: "$1,000 & above", value: { min: 1000, max: Infinity } },
+  { label: "Under ₹1,000", value: { min: 0, max: 999 } },
+  { label: "₹1,000 to ₹5,000", value: { min: 1000, max: 5000 } },
+  { label: "₹5,000 to ₹10,000", value: { min: 5000, max: 10000 } },
+  { label: "₹10,000 & above", value: { min: 10000, max: Infinity } },
 ];
 
 const ratings = [4.5, 4, 3.5];
@@ -51,6 +45,30 @@ const FilterSidebar = ({
   onFiltersChange,
 }: FilterSidebarProps) => {
   const [showAllCategories, setShowAllCategories] = useState(false);
+  const [categories, setCategories] = useState<Category[]>([]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    getProductCategories()
+      .then((data) => {
+        if (isMounted) {
+          setCategories(
+            data.map((category) => ({
+              label: category,
+              value: category,
+            })),
+          );
+        }
+      })
+      .catch((error: unknown) => {
+        console.error("Failed to load product categories:", error);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const visibleCategories = showAllCategories
     ? categories

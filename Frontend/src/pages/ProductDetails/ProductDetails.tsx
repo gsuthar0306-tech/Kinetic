@@ -1,60 +1,102 @@
 import { useEffect, useState } from "react";
 import { ArrowLeft, Minus, Plus, Star } from "lucide-react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 
-import {
-  formatRupees,
-  getProductById,
-  type Product,
-} from "@/services/products";
+import { formatRupees, getProductById, productKeys } from "@/services/products";
 
 import AddtoHeart from "@/components/subComponents/AddtoHeart";
 import AddToBag from "@/components/subComponents/AddToBag";
+import { useQuery } from "@tanstack/react-query";
+
+type ProductDetailState = {
+  from?: "store" | "favorites" | "cart";
+};
 
 const ProductDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
 
-  const [product, setProduct] = useState<Product | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState(false);
+  // const [product, setProduct] = useState<Product | null>(null);
+  // const [loading, setLoading] = useState(true);
+  // const [loadError, setLoadError] = useState(false);
 
   const [selectedImage, setSelectedImage] = useState("");
 
   const [quantity, setQuantity] = useState(1);
 
-  useEffect(() => {
-    const loadProduct = async () => {
+  const navigationState = location.state as ProductDetailState | null;
+
+  const backPath =
+    navigationState?.from === "favorites"
+      ? "/profile/favorites"
+      : navigationState?.from === "cart"
+        ? "/profile/cart"
+        : "/store";
+
+  const backLabel =
+    navigationState?.from === "favorites"
+      ? "Back to Favorites"
+      : navigationState?.from === "cart"
+        ? "Back to Cart"
+        : "Back to Store";
+
+  // useEffect(() => {
+  //   const loadProduct = async () => {
+  //     if (!id) {
+  //       setLoading(false);
+  //       return;
+  //     }
+
+  //     try {
+  //       const data = await getProductById(id);
+  //       setProduct(data);
+  //       setSelectedImage(data.thumbnail);
+  //     } catch (error) {
+  //       console.error("Failed to load product:", error);
+  //       setLoadError(true);
+  //       setProduct(null);
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   };
+
+  //   loadProduct();
+  // }, [id]);
+
+  const {
+    data: product,
+    isPending,
+    isError,
+    refetch,
+  } = useQuery({
+    queryKey: productKeys.detail(id ?? ""),
+    queryFn: () => {
       if (!id) {
-        setLoading(false);
-        return;
+        throw new Error("Product ID is missing");
       }
 
-      try {
-        const data = await getProductById(id);
-        setProduct(data);
-        setSelectedImage(data.thumbnail);
-      } catch (error) {
-        console.error("Failed to load product:", error);
-        setLoadError(true);
-        setProduct(null);
-      } finally {
-        setLoading(false);
-      }
-    };
+      return getProductById(id);
+    },
+    enabled: Boolean(id),
+    staleTime: 5 * 60 * 1000,
+  });
 
-    loadProduct();
-  }, [id]);
+  useEffect(() => {
+    if (product) {
+      setSelectedImage(product.thumbnail);
+    }
+  }, [product]);
 
-  if (loading) {
+  if (isPending) {
     return (
-      <main className="p-6">
-        <div className="grid gap-8 md:grid-cols-2">
-          <div className="aspect-square animate-pulse rounded-xl bg-slate-100" />
+      <main className="mx-auto max-w-[1440px] p-4 sm:p-6">
+        <div className="grid gap-6 lg:grid-cols-[auto_1fr] lg:gap-14">
+          <div className="h-72 w-full animate-pulse rounded-xl bg-slate-100 sm:h-80 lg:h-[520px] lg:w-[616px]" />
 
-          <div className="flex flex-col justify-center">
+          <div className="flex max-w-2xl flex-col">
             <div className="h-3 w-24 animate-pulse rounded bg-slate-100" />
-            <div className="mt-4 h-10 w-3/4 animate-pulse rounded bg-slate-100" />
+            <div className="mt-4 h-8 w-3/4 animate-pulse rounded bg-slate-100" />
             <div className="mt-6 h-8 w-32 animate-pulse rounded bg-slate-100" />
             <div className="mt-6 h-12 w-full animate-pulse rounded bg-slate-100" />
           </div>
@@ -63,11 +105,14 @@ const ProductDetails = () => {
     );
   }
 
-  if (!product) {
+  if (!id || isError || !product) {
     return (
       <main className="flex min-h-96 flex-col items-center justify-center gap-4 p-6">
-        <p role={loadError ? "alert" : undefined} className="text-sm text-slate-500">
-          {loadError
+        <p
+          role={isError ? "alert" : undefined}
+          className="text-sm text-slate-500"
+        >
+          {isError
             ? "Could not load this product from the backend."
             : "Product not found."}
         </p>
@@ -79,6 +124,16 @@ const ProductDetails = () => {
         >
           Back to Store
         </button>
+
+        {isError && (
+          <button
+            type="button"
+            onClick={() => refetch()}
+            className="text-sm font-medium underline"
+          >
+            Try again
+          </button>
+        )}
       </main>
     );
   }
@@ -87,38 +142,39 @@ const ProductDetails = () => {
     product.images?.length > 0 ? product.images : [product.thumbnail];
 
   return (
-    <main className="p-4 sm:p-6">
+    <main className="mx-auto max-w-[1440px] p-4 sm:p-6">
       <button
         type="button"
-        onClick={() => navigate("/store")}
-        className="mb-6 flex items-center gap-2 text-sm font-medium text-slate-500 transition-colors hover:text-slate-950"
+        onClick={() => navigate(backPath)}
+        className="mb-4 flex items-center gap-2 text-sm font-medium text-slate-500 transition-colors hover:text-slate-950 sm:mb-6"
       >
         <ArrowLeft className="size-4" />
-        Back to Store
+        {backLabel}
       </button>
 
-      <section className="grid gap-10 md:grid-cols-2">
-        <div>
-          <div className="relative aspect-square overflow-hidden rounded-xl bg-slate-100">
+      <section className="grid gap-6 sm:gap-8 lg:grid-cols-[auto_1fr] lg:items-start lg:gap-14">
+        <div className="mx-auto flex w-full max-w-xl min-w-0 flex-col gap-3 lg:mx-0 lg:w-auto lg:max-w-none lg:flex-row-reverse lg:gap-4">
+          <div className="relative h-72 w-full shrink-0 overflow-hidden rounded-xl bg-slate-100 sm:h-80 lg:size-[520px]">
             <img
               src={selectedImage}
               alt={product.title}
-              className="h-full w-full object-contain p-6"
+              className="h-full w-full object-contain p-4 sm:p-6"
             />
 
             <AddtoHeart product={product} variant="detail" />
           </div>
 
-          <div className="mt-4 flex gap-3 overflow-x-auto">
+          <div className="flex gap-2 overflow-x-auto pb-1 sm:gap-3 lg:max-h-[520px] lg:flex-col lg:overflow-y-auto lg:overflow-x-hidden lg:pb-0">
             {productImages.map((image, index) => (
               <button
                 key={`${image}-${index}`}
                 type="button"
                 onClick={() => setSelectedImage(image)}
-                className={`size-20 shrink-0 overflow-hidden rounded-lg border-2 bg-slate-100 ${
+                aria-label={`Show image ${index + 1}`}
+                className={`size-14 shrink-0 overflow-hidden rounded-lg border-2 bg-slate-100 sm:size-16 lg:size-[72px] ${
                   selectedImage === image
                     ? "border-slate-950"
-                    : "border-transparent"
+                    : "border-transparent hover:border-slate-300"
                 }`}
               >
                 <img
@@ -131,16 +187,16 @@ const ProductDetails = () => {
           </div>
         </div>
 
-        <div className="flex flex-col justify-center">
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400">
+        <div className="flex min-w-0 max-w-2xl flex-col">
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 sm:text-xs">
             {product.category.replaceAll("-", " ")}
           </p>
 
-          <h1 className="mt-3 text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">
+          <h1 className="mt-2 text-xl font-bold leading-snug tracking-tight text-slate-950 sm:text-2xl lg:text-3xl">
             {product.title}
           </h1>
 
-          <div className="mt-5 flex items-center gap-3">
+          <div className="mt-3 flex items-center gap-3 sm:mt-4">
             <div className="flex items-center gap-1">
               {Array.from({ length: 5 }).map((_, index) => (
                 <Star
@@ -159,18 +215,18 @@ const ProductDetails = () => {
             </span>
           </div>
 
-          <div className="mt-6 flex items-baseline gap-3">
-            <p className="text-3xl font-bold text-slate-950">
+          <div className="mt-4 flex flex-wrap items-baseline gap-x-3 sm:mt-5">
+            <p className="text-2xl font-bold text-slate-950 sm:text-3xl">
               {formatRupees(product.price)}
             </p>
             {product.actualPrice > product.price && (
-              <p className="text-lg text-slate-400 line-through">
+              <p className="text-base text-slate-400 line-through sm:text-lg">
                 {formatRupees(product.actualPrice)}
               </p>
             )}
           </div>
 
-          <div className="my-7 h-px bg-slate-200" />
+          <div className="my-5 h-px bg-slate-200 sm:my-6" />
 
           <div>
             <p className="mb-3 text-sm font-semibold text-slate-900">
@@ -180,10 +236,11 @@ const ProductDetails = () => {
             <div className="flex w-fit items-center rounded-md border border-slate-300">
               <button
                 type="button"
+                aria-label="Decrease quantity"
                 onClick={() =>
                   setQuantity((current) => Math.max(1, current - 1))
                 }
-                className="p-3 transition hover:bg-slate-100"
+                className="p-2.5 transition hover:bg-slate-100 sm:p-3"
               >
                 <Minus className="size-4" />
               </button>
@@ -194,8 +251,9 @@ const ProductDetails = () => {
 
               <button
                 type="button"
+                aria-label="Increase quantity"
                 onClick={() => setQuantity((current) => current + 1)}
-                className="p-3 transition hover:bg-slate-100"
+                className="p-2.5 transition hover:bg-slate-100 sm:p-3"
               >
                 <Plus className="size-4" />
               </button>
@@ -204,7 +262,7 @@ const ProductDetails = () => {
 
           <AddToBag product={product} variant="detail" />
 
-          <div className="mt-8 rounded-lg border border-slate-200 p-5">
+          <div className="mt-6 rounded-lg border border-slate-200 p-4 sm:mt-8 sm:p-5">
             <h2 className="text-sm font-bold text-slate-950">
               Product Information
             </h2>
@@ -213,7 +271,7 @@ const ProductDetails = () => {
               <div className="flex justify-between gap-4">
                 <span className="text-slate-500">Category</span>
 
-                <span className="font-medium capitalize text-slate-900">
+                <span className="text-right font-medium capitalize text-slate-900">
                   {product.category.replaceAll("-", " ")}
                 </span>
               </div>
@@ -221,7 +279,7 @@ const ProductDetails = () => {
               <div className="flex justify-between gap-4">
                 <span className="text-slate-500">Product ID</span>
 
-                <span className="font-medium text-slate-900">
+                <span className="break-all text-right font-medium text-slate-900">
                   #{product.id}
                 </span>
               </div>
@@ -245,7 +303,7 @@ const ProductDetails = () => {
               <div className="flex justify-between gap-4">
                 <span className="text-slate-500">Subcategory</span>
 
-                <span className="font-medium text-slate-900">
+                <span className="text-right font-medium text-slate-900">
                   {product.subCategory}
                 </span>
               </div>
@@ -255,7 +313,7 @@ const ProductDetails = () => {
                   href={product.link}
                   target="_blank"
                   rel="noreferrer"
-                  className="mt-5 text-sm font-semibold text-blue-700 underline underline-offset-4"
+                  className="inline-block pt-2 text-sm font-semibold text-blue-700 underline underline-offset-4"
                 >
                   View product listing
                 </a>

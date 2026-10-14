@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
-import { getProductCategories } from "@/services/products";
+import { getProductCategories, productKeys } from "@/services/products";
 
 import {
   Accordion,
@@ -9,6 +9,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useQuery } from "@tanstack/react-query";
 
 interface Category {
   label: string;
@@ -40,35 +41,43 @@ const priceRanges: { label: string; value: PriceRange }[] = [
 
 const ratings = [4.5, 4, 3.5];
 
-const FilterSidebar = ({
-  filters,
-  onFiltersChange,
-}: FilterSidebarProps) => {
+const FilterSidebar = ({ filters, onFiltersChange }: FilterSidebarProps) => {
   const [showAllCategories, setShowAllCategories] = useState(false);
-  const [categories, setCategories] = useState<Category[]>([]);
+  // const [categories, setCategories] = useState<Category[]>([]);
 
-  useEffect(() => {
-    let isMounted = true;
+  // useEffect(() => {
+  //   let isMounted = true;
 
-    getProductCategories()
-      .then((data) => {
-        if (isMounted) {
-          setCategories(
-            data.map((category) => ({
-              label: category,
-              value: category,
-            })),
-          );
-        }
-      })
-      .catch((error: unknown) => {
-        console.error("Failed to load product categories:", error);
-      });
+  //   getProductCategories()
+  //     .then((data) => {
+  //       if (isMounted) {
+  //         setCategories(
+  //           data.map((category) => ({
+  //             label: category,
+  //             value: category,
+  //           })),
+  //         );
+  //       }
+  //     })
+  //     .catch((error: unknown) => {
+  //       console.error("Failed to load product categories:", error);
+  //     });
 
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+  //   return () => {
+  //     isMounted = false;
+  //   };
+  // }, []);
+
+  const { data: categoryData = [], isError } = useQuery({
+    queryKey: productKeys.categories,
+    queryFn: getProductCategories,
+    staleTime: 30 * 60 * 1000,
+  });
+
+  const categories: Category[] = categoryData.map((category) => ({
+    label: category,
+    value: category,
+  }));
 
   const visibleCategories = showAllCategories
     ? categories
@@ -79,13 +88,12 @@ const FilterSidebar = ({
 
     if (currentCategories.includes(category)) {
       const updatedCategories = currentCategories.filter(
-        (item) => item !== category
+        (item) => item !== category,
       );
 
       onFiltersChange({
         ...filters,
-        categories:
-          updatedCategories.length > 0 ? updatedCategories : null,
+        categories: updatedCategories.length > 0 ? updatedCategories : null,
       });
 
       return;
@@ -172,9 +180,7 @@ const FilterSidebar = ({
                   className="flex items-center gap-1 rounded-full bg-blue-500 px-2 py-1 text-xs text-white"
                 >
                   <span>
-                    {categories.find(
-                      (item) => item.value === category
-                    )?.label}
+                    {categories.find((item) => item.value === category)?.label}
                   </span>
 
                   <button
@@ -193,9 +199,7 @@ const FilterSidebar = ({
 
                   <button
                     type="button"
-                    onClick={() =>
-                      handlePriceChange(filters.priceRange!)
-                    }
+                    onClick={() => handlePriceChange(filters.priceRange!)}
                     className="flex h-4 w-4 items-center justify-center rounded hover:bg-blue-600"
                     aria-label="Remove price filter"
                   >
@@ -210,9 +214,7 @@ const FilterSidebar = ({
 
                   <button
                     type="button"
-                    onClick={() =>
-                      handleRatingChange(filters.minRating!)
-                    }
+                    onClick={() => handleRatingChange(filters.minRating!)}
                     className="flex h-4 w-4 items-center justify-center rounded hover:bg-blue-600"
                     aria-label="Remove rating filter"
                   >
@@ -241,8 +243,7 @@ const FilterSidebar = ({
                       <Checkbox
                         id={category.value}
                         checked={
-                          filters.categories?.includes(category.value) ??
-                          false
+                          filters.categories?.includes(category.value) ?? false
                         }
                         onCheckedChange={() =>
                           handleCategoryChange(category.value)
@@ -263,9 +264,7 @@ const FilterSidebar = ({
               {categories.length > 4 && (
                 <button
                   type="button"
-                  onClick={() =>
-                    setShowAllCategories(!showAllCategories)
-                  }
+                  onClick={() => setShowAllCategories(!showAllCategories)}
                   className="mt-3 text-sm font-medium text-blue-500 hover:underline"
                 >
                   {showAllCategories ? "Show less" : "Show more"}
@@ -289,16 +288,11 @@ const FilterSidebar = ({
                     filters.priceRange?.max === range.value.max;
 
                   return (
-                    <div
-                      key={range.label}
-                      className="flex items-center gap-2"
-                    >
+                    <div key={range.label} className="flex items-center gap-2">
                       <Checkbox
                         id={`price-${range.value.min}`}
                         checked={checked}
-                        onCheckedChange={() =>
-                          handlePriceChange(range.value)
-                        }
+                        onCheckedChange={() => handlePriceChange(range.value)}
                       />
 
                       <label
@@ -328,9 +322,7 @@ const FilterSidebar = ({
                     <Checkbox
                       id={`rating-${rating}`}
                       checked={filters.minRating === rating}
-                      onCheckedChange={() =>
-                        handleRatingChange(rating)
-                      }
+                      onCheckedChange={() => handleRatingChange(rating)}
                     />
 
                     <label

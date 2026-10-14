@@ -51,9 +51,9 @@ function parsePrice(value: string): number {
 function mapProduct(product: BackendProduct): Product {
   const actualPrice = parsePrice(product.actual_price);
   const discountPrice = parsePrice(product.discount_price);
-  const images = [...new Set(
-    [product.image, ...(product.images ?? [])].filter(Boolean),
-  )];
+  const images = [
+    ...new Set([product.image, ...(product.images ?? [])].filter(Boolean)),
+  ];
 
   return {
     id: product._id,
@@ -76,9 +76,11 @@ export async function getProducts(
   pageSize = 24,
   categories?: string[],
 ): Promise<PagedProducts> {
-  const { data } = await api.get<Omit<PagedProducts, "items"> & {
-    items: BackendProduct[];
-  }>("/Products/GetAll", {
+  const { data } = await api.get<
+    Omit<PagedProducts, "items"> & {
+      items: BackendProduct[];
+    }
+  >("/Products/GetAll", {
     params: { page, pageSize, categories: categories?.join(",") },
   });
 
@@ -104,3 +106,12 @@ export async function getProductById(id: string): Promise<Product> {
   );
   return mapProduct(data);
 }
+
+export const productKeys = {
+  all: ["electronicProducts"] as const,
+
+  list: (page = 1, pageSize = 24, categories: string[] = []) =>
+    ["electronicProducts", page, pageSize, [...categories].sort()] as const,
+  categories: ["productCategories"] as const,
+  detail: (id: string) => ["productDetails", id] as const,
+};

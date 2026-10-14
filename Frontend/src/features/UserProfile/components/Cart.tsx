@@ -1,8 +1,10 @@
 import { Minus, Plus, Trash2 } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import { formatRupees } from "@/services/products";
+import { useNavigate } from "react-router";
 
 const Cart = () => {
+  const navigate = useNavigate();
   const { cartItems, removeFromCart, increaseQuantity, decreaseQuantity } =
     useCart();
   const subtotal = cartItems.reduce(
@@ -42,6 +44,11 @@ const Cart = () => {
             {cartItems.map((item) => (
               <div
                 key={item.product.id}
+                onClick={() => {
+                  navigate(`/product/${item.product.id}`, {
+                    state: { from: "cart" },
+                  });
+                }}
                 className="flex gap-4 bg-white rounded-xl border border-dashed border-slate-500 p-4 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
               >
                 <img
@@ -63,7 +70,10 @@ const Cart = () => {
                     <div className="flex items-center rounded-lg border">
                       <button
                         type="button"
-                        onClick={() => decreaseQuantity(item.product.id)}
+                        onClick={(event) => {
+                          (event.stopPropagation(),
+                            decreaseQuantity(item.product.id));
+                        }}
                         className="p-2 hover:bg-gray-100 rounded-lg"
                       >
                         <Minus size={16} />
@@ -75,7 +85,10 @@ const Cart = () => {
 
                       <button
                         type="button"
-                        onClick={() => increaseQuantity(item.product.id)}
+                        onClick={(event) => {
+                          (event.stopPropagation(),
+                            increaseQuantity(item.product.id));
+                        }}
                         className="p-2 hover:bg-gray-100 rounded-lg"
                       >
                         <Plus size={16} />
@@ -84,7 +97,10 @@ const Cart = () => {
 
                     <button
                       type="button"
-                      onClick={() => removeFromCart(item.product.id)}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        removeFromCart(item.product.id);
+                      }}
                       className="flex items-center gap-2 text-sm text-gray-500 hover:text-red-500"
                     >
                       <Trash2 size={16} />
@@ -130,7 +146,9 @@ const Cart = () => {
                 <div className="flex justify-between">
                   <span className="font-medium">Total</span>
 
-                  <span className="font-semibold">{formatRupees(subtotal)}</span>
+                  <span className="font-semibold">
+                    {formatRupees(subtotal)}
+                  </span>
                 </div>
               </div>
 

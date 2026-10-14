@@ -1,5 +1,9 @@
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Table, type TableProps } from "antd";
+import type { SorterResult } from "antd/es/table/interface";
+
 import { getUsers } from "@/services/userApi";
-import { useEffect, useState } from "react";
 
 interface User {
   id: string;
@@ -13,59 +17,176 @@ interface User {
   updatedAt: string;
 }
 
+interface TableParams {
+  pagination: {
+    current: number;
+    pageSize: number;
+  };
+  sortField?: string;
+  sortOrder?: "ascend" | "descend";
+}
+
 const AdminAllusers = () => {
-  const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [tableParams, setTableParams] = useState<TableParams>({
+    pagination: {
+      current: 1,
+      pageSize: 10,
+    },
+  });
 
-  useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const data = await getUsers();
-        setUsers(data);
-      } catch (error) {
-        console.error("Failed to fetch users:", error);
-      } finally {
-        setLoading(false);
+  const {
+    data: users = [],
+    isLoading,
+    isError,
+    error,
+  } = useQuery<User[]>({
+    queryKey: ["users"],
+    queryFn: getUsers,
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const columns: TableProps<User>["columns"] = [
+    {
+      title: "First Name",
+      dataIndex: "firstname",
+      key: "firstname",
+      width: 150,
+      sorter: (a, b) => a.firstname.localeCompare(b.firstname),
+    },
+    {
+      title: "Last Name",
+      dataIndex: "lastname",
+      key: "lastname",
+      width: 150,
+      sorter: (a, b) => a.lastname.localeCompare(b.lastname),
+    },
+    {
+      title: "Phone Number",
+      dataIndex: "number",
+      key: "number",
+      width: 160,
+    },
+    {
+      title: "Email",
+      dataIndex: "email",
+      key: "email",
+      width: 250,
+      ellipsis: true,
+    },
+    {
+      title: "Address",
+      dataIndex: "address",
+      key: "address",
+      width: 250,
+      ellipsis: true,
+    },
+    {
+      title: "Created At",
+      dataIndex: "createdAt",
+      key: "createdAt",
+      width: 190,
+      render: (value: string) =>
+        value ? new Date(value).toLocaleString() : "—",
+    },
+    {
+      title: "Updated At",
+      dataIndex: "updatedAt",
+      key: "updatedAt",
+      width: 190,
+      render: (value: string) =>
+        value ? new Date(value).toLocaleString() : "—",
+    },
+  ];
+
+  const handleTableChange: TableProps<User>["onChange"] = (
+    pagination,
+    _filters,
+    sorter,
+  ) => {
+    const singleSorter = Array.isArray(sorter) ? sorter[0] : sorter;
+
+    const nextSorter = singleSorter as SorterResult<User>;
+
+    setTableParams({
+      pagination: {
+        current: pagination.current ?? 1,
+        pageSize: pagination.pageSize ?? 10,
+      },
+      sortField: nextSorter.field ? String(nextSorter.field) : undefined,
+      sortOrder: nextSorter.order ?? undefined,
+    });
+  };
+
+  const sortedUsers = [...users];
+
+  if (tableParams.sortField && tableParams.sortOrder) {
+    const field = tableParams.sortField as keyof User;
+
+    sortedUsers.sort((a, b) => {
+      const first = a[field];
+      const second = b[field];
+
+      let comparison = 0;
+
+      if (typeof first === "number" && typeof second === "number") {
+        comparison = first - second;
+      } else {
+        comparison = String(first ?? "").localeCompare(String(second ?? ""));
       }
-    };
-    fetchUsers();
-  }, []);
 
-  if (loading) {
-    return <div className="p-6">Loading users...</div>;
+      return tableParams.sortOrder === "ascend" ? comparison : -comparison;
+    });
+  }
+
+  if (isError) {
+    return (
+      <div className="p-6">
+        <h1 className="mb-4 text-2xl font-semibold">All Users</h1>
+
+        <p className="text-red-500">
+          Failed to load users. Please check your API and login session.
+        </p>
+
+        <p className="mt-2 text-sm text-muted-foreground">
+          {error instanceof Error ? error.message : "Unknown error"}
+        </p>
+      </div>
+    );
   }
 
   return (
-    <div className="p-6">
-      <h1 className="mb-6 text-2xl font-semibold">All Users</h1>
+    <div className="min-w-0 p-4 sm:p-6">
+      <div className="mb-6">
+        <h1 className="text-2xl font-semibold">All Users</h1>
 
-      <div className="max-h-[70vh] overflow-auto rounded-md border">
-        <table className="min-w-full text-left text-sm">
-          <thead className="sticky top-0 z-10 border-b bg-muted/80 backdrop-blur-sm">
-            <tr>
-              <th className="px-4 py-3">ID</th>
-              <th className="px-4 py-3">First Name</th>
-              <th className="px-4 py-3">Last Name</th>
-              <th className="px-4 py-3">Age</th>
-              <th className="px-4 py-3">Number</th>
-              <th className="px-4 py-3">Email</th>
-              <th className="px-4 py-3">Address</th>
-            </tr>
-          </thead>
-          <tbody>
-            {users.map((user) => (
-              <tr key={user.id} className="border-b">
-                <td className="px-4 py-3">{user.id}</td>
-                <td className="px-4 py-3">{user.firstname}</td>
-                <td className="px-4 py-3">{user.lastname}</td>
-                <td className="px-4 py-3">{user.age}</td>
-                <td className="px-4 py-3">{user.number}</td>
-                <td className="px-4 py-3">{user.email}</td>
-                <td className="px-4 py-3">{user.address}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <p className="mt-1 text-sm text-muted-foreground">
+          View and manage registered users.
+        </p>
+      </div>
+
+      <div className="w-full min-w-0 overflow-hidden rounded-lg border bg-white">
+        <Table<User>
+          columns={columns}
+          rowKey="id"
+          dataSource={sortedUsers}
+          loading={isLoading}
+          onChange={handleTableChange}
+          pagination={{
+            current: tableParams.pagination.current,
+            pageSize: tableParams.pagination.pageSize,
+            total: users.length,
+            showSizeChanger: true,
+            pageSizeOptions: ["10", "20", "50", "100"],
+            showTotal: (total, range) =>
+              `${range[0]}–${range[1]} of ${total} users`,
+          }}
+          scroll={{
+            x: 1650,
+            y: "60vh",
+          }}
+          size="middle"
+          bordered
+        />
       </div>
     </div>
   );

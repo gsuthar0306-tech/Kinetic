@@ -71,7 +71,8 @@ namespace Kinetic.Features.Product
                     value.AsString,
                     NumberStyles.Float | NumberStyles.AllowThousands,
                     CultureInfo.InvariantCulture,
-                    out rating))
+                    out rating)
+                )
             {
                 return true;
             }

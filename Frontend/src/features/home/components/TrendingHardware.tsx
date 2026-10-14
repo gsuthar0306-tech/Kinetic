@@ -1,41 +1,27 @@
 import { Star } from "lucide-react";
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router";
+import { Link, useNavigate } from "react-router";
 
-import {
-  formatRupees,
-  getElectronicProducts,
-  type Product,
-} from "@/services/products";
+import { useQuery } from "@tanstack/react-query";
 
 import AddtoHeart from "@/components/subComponents/AddtoHeart";
 import AddToBag from "@/components/subComponents/AddToBag";
-
-const formatPrice = (price: number) =>
-  formatRupees(price);
+import {
+  formatRupees,
+  getElectronicProducts,
+  productKeys,
+  type Product,
+} from "@/services/products";
 
 const TrendingHardware = () => {
-  const [products, setProducts] = useState<Product[]>([]);
-
   const navigate = useNavigate();
 
-  useEffect(() => {
-    let isMounted = true;
+  const { data, isPending, isError, refetch } = useQuery({
+    queryKey: productKeys.list(1, 24),
+    queryFn: () => getElectronicProducts(1, 24),
+    staleTime: 5 * 60 * 1000,
+  });
 
-    getElectronicProducts(1, 4)
-      .then((data) => {
-        if (isMounted) {
-          setProducts(data.items);
-        }
-      })
-      .catch((error: unknown) => {
-        console.error("Failed to load trending products:", error);
-      });
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+  const products = data?.items.slice(0, 4) ?? [];
 
   const handleProductClick = (product: Product) => {
     navigate(`/product/${product.id}`);
@@ -44,8 +30,7 @@ const TrendingHardware = () => {
   return (
     <section className="bg-white px-5 py-14 sm:px-8 sm:py-16 lg:py-20">
       <div className="mx-auto max-w-7xl">
-        {/* Header */}
-        <div className="flex items-end justify-between border-b border-slate-200 pb-4">
+        <div className="flex items-end justify-between gap-4 border-b border-slate-200 pb-4">
           <div>
             <p className="text-[10px] font-semibold tracking-[0.2em] text-slate-500">
               NEW ARRIVALS
@@ -56,80 +41,116 @@ const TrendingHardware = () => {
             </h2>
           </div>
 
-          <a
-            href="#"
-            className="text-xs font-semibold text-blue-600 transition-colors hover:text-blue-800"
+          <Link
+            to="/store"
+            className="shrink-0 text-xs font-semibold text-blue-600 transition-colors hover:text-blue-800"
           >
             View All &rarr;
-          </a>
+          </Link>
         </div>
 
-        {/* Products */}
-        <div className="mt-6 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-          {(products.length ? products : Array.from({ length: 4 })).map(
-            (product, index) => {
-              const item = product as Product | undefined;
+        {isError && (
+          <div
+            role="alert"
+            className="mt-6 rounded-lg border border-red-200 bg-red-50 p-5 text-center"
+          >
+            <p className="text-sm text-red-700">
+              Could not load trending products.
+            </p>
 
-              return (
-                <article
-                  key={item?.id ?? index}
-                  onClick={() => item && handleProductClick(item)}
-                  className="group cursor-pointer rounded-lg border border-slate-200 bg-white p-2 shadow-sm transition-shadow hover:shadow-md sm:p-3"
-                >
-                  {/* Image */}
-                  <div className="relative aspect-square overflow-hidden rounded-md bg-slate-100">
-                    {item ? (
+            <button
+              type="button"
+              onClick={() => refetch()}
+              className="mt-3 rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700"
+            >
+              Try Again
+            </button>
+          </div>
+        )}
+
+        {!isError && (
+          <div
+            aria-busy={isPending}
+            className="mt-6 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4"
+          >
+            {isPending
+              ? Array.from({ length: 4 }, (_, index) => (
+                  <article
+                    key={index}
+                    className="rounded-lg border border-slate-200 bg-white p-2 shadow-sm sm:p-3"
+                  >
+                    <div className="aspect-square animate-pulse rounded-md bg-slate-100" />
+
+                    <div className="px-1 pb-1 pt-3">
+                      <div className="h-3 w-2/3 animate-pulse rounded bg-slate-100" />
+                      <div className="mt-3 h-4 w-full animate-pulse rounded bg-slate-100" />
+                      <div className="mt-4 h-4 w-1/2 animate-pulse rounded bg-slate-100" />
+                      <div className="mt-4 h-9 animate-pulse rounded bg-slate-100" />
+                    </div>
+                  </article>
+                ))
+              : products.map((product) => (
+                  <article
+                    key={product.id}
+                    onClick={() => handleProductClick(product)}
+                    className="group cursor-pointer rounded-lg border border-slate-200 bg-white p-2 shadow-sm transition-shadow hover:shadow-md sm:p-3"
+                  >
+                    <div className="relative aspect-square overflow-hidden rounded-md bg-white">
                       <img
-                        src={item.thumbnail}
-                        alt={item.title}
-                        className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
+                        src={product.thumbnail}
+                        alt={product.title}
+                        loading="lazy"
+                        className="h-full w-full object-contain transition duration-300 group-hover:scale-105"
                       />
-                    ) : (
-                      <div className="h-full animate-pulse bg-slate-100" />
-                    )}
 
-                    {item && <AddtoHeart product={item} variant="detail" />}
-                  </div>
-
-                  <div className="px-1 pb-1 pt-3">
-                    <p className="truncate text-[9px] font-semibold tracking-[0.14em] text-slate-400">
-                      {item
-                        ? `${item.category} · ${item.subCategory}`
-                        : "LOADING"}
-                    </p>
-
-                    <h3 className="mt-1 truncate text-sm font-semibold text-slate-900">
-                      {item?.title ?? "Loading product"}
-                    </h3>
-
-                    <div className="mt-2 flex items-center justify-between">
-                      <div className="flex flex-wrap items-baseline gap-2">
-                        <span className="text-sm font-bold text-slate-950">
-                          {item ? formatPrice(item.price) : "—"}
-                        </span>
-                        {item && item.actualPrice > item.price && (
-                          <span className="text-xs text-slate-400 line-through">
-                            {formatPrice(item.actualPrice)}
-                          </span>
-                        )}
-                      </div>
-
-                      {item && (
-                        <span className="flex items-center gap-1 text-[10px] text-slate-500">
-                          <Star className="size-3 fill-amber-400 text-amber-400" />
-                          {item.rating.toFixed(1)}
-                        </span>
-                      )}
+                      <AddtoHeart product={product} variant="detail" />
                     </div>
 
-                    {/* Add To Bag */}
-                    {item && <AddToBag product={item} variant="card" />}
-                  </div>
-                </article>
-              );
-            },
-          )}
-        </div>
+                    <div className="px-1 pb-1 pt-3">
+                      <p className="truncate text-[9px] font-semibold tracking-[0.14em] text-slate-400">
+                        {product.category} · {product.subCategory}
+                      </p>
+
+                      <h3
+                        title={product.title}
+                        className="mt-1 truncate text-sm font-semibold text-slate-900"
+                      >
+                        {product.title}
+                      </h3>
+
+                      <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+                        <div className="flex flex-wrap items-baseline gap-2">
+                          <span className="text-sm font-bold text-slate-950">
+                            {formatRupees(product.price)}
+                          </span>
+
+                          {product.actualPrice > product.price && (
+                            <span className="text-xs text-slate-400 line-through">
+                              {formatRupees(product.actualPrice)}
+                            </span>
+                          )}
+                        </div>
+
+                        <span className="flex items-center gap-1 text-[10px] text-slate-500">
+                          <Star className="size-3 fill-amber-400 text-amber-400" />
+                          {Number(product.rating || 0).toFixed(1)}
+                        </span>
+                      </div>
+
+                      <div onClick={(event) => event.stopPropagation()}>
+                        <AddToBag product={product} variant="card" />
+                      </div>
+                    </div>
+                  </article>
+                ))}
+
+            {!isPending && !isError && products.length === 0 && (
+              <p className="col-span-full py-10 text-center text-sm text-slate-500">
+                No products are available right now.
+              </p>
+            )}
+          </div>
+        )}
       </div>
     </section>
   );

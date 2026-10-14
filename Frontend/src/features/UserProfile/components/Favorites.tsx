@@ -2,10 +2,18 @@ import { Heart, Star, Trash2 } from "lucide-react";
 
 import { useFavorites } from "@/context/FavoritesContext";
 import AddToBag from "@/components/subComponents/AddToBag";
-import { formatRupees } from "@/services/products";
+import { formatRupees, type Product } from "@/services/products";
+import { useNavigate } from "react-router";
 
 const Favorites = () => {
+  const navigate = useNavigate();
   const { favorites, toggleFavorite } = useFavorites();
+
+  const handleProductClick = (product: Product) => {
+    navigate(`/product/${product.id}`, {
+      state: { from: "favorites" },
+    });
+  };
 
   if (favorites.length === 0) {
     return (
@@ -72,11 +80,17 @@ const Favorites = () => {
           {favorites.map((product) => (
             <article
               key={product.id}
+              onClick={() => {
+                handleProductClick(product);
+              }}
               className="group relative flex flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white p-4 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
             >
               <button
                 type="button"
-                onClick={() => toggleFavorite(product)}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  toggleFavorite(product);
+                }}
                 aria-label={`Remove ${product.title} from favorites`}
                 className="absolute right-5 top-5 z-10 flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 bg-white/95 shadow-sm backdrop-blur transition-all duration-200 hover:scale-105 hover:border-red-200 hover:bg-red-50"
               >

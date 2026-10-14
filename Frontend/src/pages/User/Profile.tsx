@@ -172,7 +172,7 @@ export function Profile() {
                   Your account<span className="px-3">{user.role}</span>
                 </p>
                 <h1 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">
-                  Welcome back, {user.name}
+                  Welcome back, {user.Firstname + user.Lastname}
                 </h1>
                 <p className="mt-2 text-sm text-slate-300">{user.email}</p>
               </div>

@@ -7,6 +7,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { NavLink } from "react-router";
 
 export type SortOption = "recommended" | "price-low" | "price-high" | "rating";
 
@@ -33,13 +34,16 @@ const UnderNav = ({ sortBy, onSortChange, resultCount }: UnderNavProps) => {
         aria-label="Breadcrumb"
         className="mb-1 flex items-center gap-1.5 text-sm text-slate-500"
       >
-        <Home className="size-3.5" />
-
-        <span>Home</span>
+        <div className="flex gap-1 items-center hover:text-black">
+          <Home className="size-3.5" />
+          <NavLink to={`/`}>Home</NavLink>
+        </div>
 
         <ChevronRight className="size-3.5 text-slate-300" />
 
-        <span className="text-slate-700">Products</span>
+        <NavLink to={`/store`} className="text-slate-700">
+          Products
+        </NavLink>
       </nav>
 
       <div className="flex flex-wrap items-end justify-between gap-4">

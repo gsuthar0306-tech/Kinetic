@@ -1,19 +1,50 @@
+import { useState } from "react";
 import { Heart, Star, Trash2 } from "lucide-react";
+import { toast } from "sonner";
+import { useNavigate } from "react-router";
 
 import { useFavorites } from "@/context/FavoritesContext";
 import AddToBag from "@/components/subComponents/AddToBag";
 import { formatRupees, type Product } from "@/services/products";
-import { useNavigate } from "react-router";
 
 const Favorites = () => {
   const navigate = useNavigate();
-  const { favorites, toggleFavorite } = useFavorites();
+  const { favorites, toggleFavorite, isLoading } = useFavorites();
+
+  const [removingId, setRemovingId] = useState<string | null>(null);
 
   const handleProductClick = (product: Product) => {
     navigate(`/product/${product.id}`, {
       state: { from: "favorites" },
     });
   };
+
+  const handleRemoveFavorite = async (product: Product) => {
+    if (removingId !== null) return;
+
+    setRemovingId(product.id);
+
+    try {
+      await toggleFavorite(product);
+      toast.success("Removed from favorites", {
+        description: "Product removed from your favorites.",
+      });
+    } catch {
+      toast.error("Couldn't remove favorite", {
+        description: "Please check your connection and try again.",
+      });
+    } finally {
+      setRemovingId(null);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <main className="flex min-h-[65vh] items-center justify-center px-6">
+        <p className="text-sm text-gray-500">Loading your favorites...</p>
+      </main>
+    );
+  }
 
   if (favorites.length === 0) {
     return (
@@ -68,31 +99,27 @@ const Favorites = () => {
             </p>
           </div>
 
-          {favorites.length > 0 && (
-            <p className="text-sm font-medium text-gray-500">
-              {favorites.length}{" "}
-              {favorites.length === 1 ? "product" : "products"}
-            </p>
-          )}
+          <p className="text-sm font-medium text-gray-500">
+            {favorites.length} {favorites.length === 1 ? "product" : "products"}
+          </p>
         </div>
 
         <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {favorites.map((product) => (
             <article
               key={product.id}
-              onClick={() => {
-                handleProductClick(product);
-              }}
+              onClick={() => handleProductClick(product)}
               className="group relative flex flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white p-4 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
             >
               <button
                 type="button"
                 onClick={(event) => {
                   event.stopPropagation();
-                  toggleFavorite(product);
+                  void handleRemoveFavorite(product);
                 }}
+                disabled={removingId !== null}
                 aria-label={`Remove ${product.title} from favorites`}
-                className="absolute right-5 top-5 z-10 flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 bg-white/95 shadow-sm backdrop-blur transition-all duration-200 hover:scale-105 hover:border-red-200 hover:bg-red-50"
+                className="absolute right-5 top-5 z-10 flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 bg-white/95 shadow-sm backdrop-blur transition-all duration-200 hover:scale-105 hover:border-red-200 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <Heart className="h-[18px] w-[18px] fill-red-500 text-red-500" />
               </button>
@@ -121,8 +148,8 @@ const Favorites = () => {
                     {formatRupees(product.price || 0)}
                   </span>
 
-                  <span className="text-xs text-gray-400">
-                    <Star className="fill-amber-400" />{" "}
+                  <span className="flex items-center gap-1 text-xs text-gray-400">
+                    <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
                     {(product.rating ?? 0).toFixed(1)}
                   </span>
                 </div>
@@ -133,11 +160,17 @@ const Favorites = () => {
 
                 <button
                   type="button"
-                  onClick={() => toggleFavorite(product)}
-                  className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl py-2 text-xs font-medium text-gray-400 transition-colors hover:text-red-500"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    void handleRemoveFavorite(product);
+                  }}
+                  disabled={removingId !== null}
+                  className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl py-2 text-xs font-medium text-gray-400 transition-colors hover:text-red-500 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
-                  Remove from favorites
+                  {removingId === product.id
+                    ? "Removing..."
+                    : "Remove from favorites"}
                 </button>
               </div>
             </article>

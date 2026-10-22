@@ -1,25 +1,20 @@
 import {
   createContext,
   useContext,
+  useEffect,
   useState,
   type ReactNode,
 } from "react";
 
-import type { AuthSession, AuthUser } from "@/features/auth/auth.types";
-
-import {
-  getAuthSession,
-  removeAuthSession,
-  saveAuthSession,
-} from "@/features/auth/authStorage";
+import type { AuthUser, UserRole } from "@/features/auth/auth.types";
+import { refreshUser, logoutUser } from "@/services/authApi";
 
 interface AuthContextType {
   user: AuthUser | null;
-  token: string | null;
-  refreshToken: string | null;
   isAuthenticated: boolean;
-  login: (session: AuthSession) => void;
-  logout: () => void;
+  isLoading: boolean;
+  login: (user: AuthUser) => void;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -29,25 +24,70 @@ interface AuthProviderProps {
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
-  const [session, setSession] = useState<AuthSession | null>(() =>
-    getAuthSession(),
-  );
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const login = (newSession: AuthSession) => {
-    saveAuthSession(newSession);
-    setSession(newSession);
-  };
+  useEffect(() => {
+    let isMounted = true;
 
-  const logout = () => {
-    removeAuthSession();
-    setSession(null);
-  };
+    async function checkSession() {
+      try {
+        const response = await refreshUser();
+        const payload = response?.data ?? response;
+        const userData = payload?.user ?? payload?.User;
+
+        if (!userData?.id && !userData?.Id) {
+          throw new Error("The server did not return user information.");
+        }
+
+        const restoredUser: AuthUser = {
+          id: userData.id ?? userData.Id,
+          Firstname: userData.Firstname ?? userData.firstname ?? "",
+          Lastname: userData.Lastname ?? userData.lastname ?? "",
+          email: userData.email ?? userData.Email ?? "",
+          role: String(
+            userData.role ?? userData.Role ?? "user",
+          ).toLowerCase() as UserRole,
+          // ).toLowerCase() as AuthUser["role"],
+        };
+
+        if (isMounted) {
+          setUser(restoredUser);
+        }
+      } catch {
+        if (isMounted) {
+          setUser(null);
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    void checkSession();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  function login(newUser: AuthUser) {
+    setUser(newUser);
+  }
+
+  async function logout() {
+    try {
+      await logoutUser();
+    } finally {
+      setUser(null);
+    }
+  }
 
   const value: AuthContextType = {
-    user: session?.user ?? null,
-    token: session?.token ?? null,
-    refreshToken: session?.refreshToken ?? null,
-    isAuthenticated: session !== null,
+    user,
+    isAuthenticated: user !== null,
+    isLoading,
     login,
     logout,
   };

@@ -1,16 +1,41 @@
 import api from "./api";
 
-export const registerUser = async (data: any) => {
+export interface RegisterData {
+  Firstname: string;
+  Lastname: string;
+  Age: number;
+  Number: string;
+  Address: string;
+  Email: string;
+  Password: string;
+}
+
+export interface LoginData {
+  Email: string;
+  Password: string;
+}
+
+export async function registerUser(data: RegisterData) {
   const response = await api.post("/Users/Create", data);
   return response.data;
-};
+}
 
-export const loginUser = async (data: any) => {
-  const response = await api.post("/User/Login", data);
+export async function loginUser(data: LoginData) {
+  const response = await api.post("/Users/Login", data);
   return response.data;
-};
+}
 
-export const getUsers = async () => {
-  const response = await api.get("Users/GetAll");
+export async function getUsers() {
+  const response = await api.get("/Users/GetAll");
   return response.data;
-};
+}
+
+export async function refreshUser() {
+  const response = await api.post("/Users/Refresh");
+  return response.data;
+}
+
+export async function logoutUser() {
+  const response = await api.post("/Users/Logout");
+  return response.data;
+}

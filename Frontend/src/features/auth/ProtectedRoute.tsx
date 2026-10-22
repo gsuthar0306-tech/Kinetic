@@ -1,5 +1,4 @@
 import { Navigate, Outlet, useLocation } from "react-router";
-
 import { useAuth } from "@/context/AuthContext";
 import type { UserRole } from "@/features/auth/auth.types";
 
@@ -10,8 +9,12 @@ type ProtectedRouteProps = {
 // const DEV_MODE = true;
 
 export default function ProtectedRoute({ allowedRoles }: ProtectedRouteProps) {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isLoading } = useAuth();
   const location = useLocation();
+
+  if (isLoading) {
+    return <div>Checking your session...</div>;
+  }
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace state={{ from: location }} />;

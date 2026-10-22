@@ -23,7 +23,7 @@ const ProductDetails = () => {
 
   const [selectedImage, setSelectedImage] = useState("");
 
-  const [quantity, setQuantity] = useState(1);
+  // const [quantity, setQuantity] = useState(1);
 
   const navigationState = location.state as ProductDetailState | null;
 
@@ -226,39 +226,7 @@ const ProductDetails = () => {
             )}
           </div>
 
-          <div className="my-5 h-px bg-slate-200 sm:my-6" />
-
-          <div>
-            <p className="mb-3 text-sm font-semibold text-slate-900">
-              Quantity
-            </p>
-
-            <div className="flex w-fit items-center rounded-md border border-slate-300">
-              <button
-                type="button"
-                aria-label="Decrease quantity"
-                onClick={() =>
-                  setQuantity((current) => Math.max(1, current - 1))
-                }
-                className="p-2.5 transition hover:bg-slate-100 sm:p-3"
-              >
-                <Minus className="size-4" />
-              </button>
-
-              <span className="min-w-12 text-center text-sm font-semibold">
-                {quantity}
-              </span>
-
-              <button
-                type="button"
-                aria-label="Increase quantity"
-                onClick={() => setQuantity((current) => current + 1)}
-                className="p-2.5 transition hover:bg-slate-100 sm:p-3"
-              >
-                <Plus className="size-4" />
-              </button>
-            </div>
-          </div>
+          <div className="my-3 h-px bg-slate-200 sm:my-4" />
 
           <AddToBag product={product} variant="detail" />
 

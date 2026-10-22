@@ -1,9 +1,8 @@
+
+using Kinetic.Features.Users;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
-using SharpCompress.Compressors.ZStandard.Unsafe;
-using Kinetic.Features.Users;
 
 namespace Kinetic.Features.Users
 {
@@ -15,7 +14,6 @@ namespace Kinetic.Features.Users
         private readonly JwtService _jwtService;
         private readonly RefreshTokenService _refreshTokenService;
 
-
         public UsersController(
             UserService service,
             JwtService jwtService,
@@ -24,10 +22,62 @@ namespace Kinetic.Features.Users
             _service = service;
             _jwtService = jwtService;
             _refreshTokenService = refreshTokenService;
-
         }
 
-        [Authorize]
+        private CookieOptions AccessCookieOptions()
+        {
+            return new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = Request.IsHttps,
+                SameSite = SameSiteMode.Lax,
+                Path = "/",
+                Expires = DateTimeOffset.UtcNow.AddHours(1)
+            };
+        }
+
+        private CookieOptions RefreshCookieOptions()
+        {
+            return new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = Request.IsHttps,
+                SameSite = SameSiteMode.Lax,
+                Path = "/",
+                Expires = DateTimeOffset.UtcNow.AddDays(30)
+            };
+        }
+
+        private void SetAuthCookies(
+            string accessToken,
+            string refreshToken)
+        {
+            Response.Cookies.Append(
+                "kinetic_access_token",
+                accessToken,
+                AccessCookieOptions());
+
+            Response.Cookies.Append(
+                "kinetic_refresh_token",
+                refreshToken,
+                RefreshCookieOptions());
+        }
+
+        private void ClearAuthCookies()
+        {
+            var options = new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = Request.IsHttps,
+                SameSite = SameSiteMode.Lax,
+                Path = "/"
+            };
+
+            Response.Cookies.Delete("kinetic_access_token", options);
+            Response.Cookies.Delete("kinetic_refresh_token", options);
+        }
+
+        [Authorize(Roles = "Admin")]
         [HttpGet]
         public async Task<ActionResult<List<UserDto>>> GetAll()
         {
@@ -47,7 +97,6 @@ namespace Kinetic.Features.Users
                 UpdatedAt = user.UpdatedAt
             }).ToList();
 
-            Console.WriteLine("Done");
             return Ok(dtos);
         }
 
@@ -58,7 +107,9 @@ namespace Kinetic.Features.Users
             var user = await _service.GetByIdAsync(id);
 
             if (user == null)
+            {
                 return NotFound($"User with id '{id}' not found.");
+            }
 
             return Ok(ToDto(user));
         }
@@ -68,25 +119,39 @@ namespace Kinetic.Features.Users
             [FromBody] RegisterUserDto registerDto)
         {
             if (User.Identity?.IsAuthenticated == true)
+            {
                 return BadRequest("You are already logged in.");
+            }
 
             if (string.IsNullOrWhiteSpace(registerDto.Firstname))
+            {
                 return BadRequest("Firstname is required.");
+            }
 
             if (string.IsNullOrWhiteSpace(registerDto.Lastname))
+            {
                 return BadRequest("Lastname is required.");
+            }
 
             if (registerDto.Age <= 0)
+            {
                 return BadRequest("Age must be greater than zero.");
+            }
 
             if (string.IsNullOrWhiteSpace(registerDto.Number))
+            {
                 return BadRequest("Number is required.");
+            }
 
             if (string.IsNullOrWhiteSpace(registerDto.Email))
+            {
                 return BadRequest("Email is required.");
+            }
 
             if (string.IsNullOrWhiteSpace(registerDto.Password))
+            {
                 return BadRequest("Password is required.");
+            }
 
             try
             {
@@ -95,8 +160,7 @@ namespace Kinetic.Features.Users
                 return CreatedAtAction(
                     nameof(GetById),
                     new { id = user.Id.ToString() },
-                    ToDto(user)
-                );
+                    ToDto(user));
             }
             catch (InvalidOperationException ex)
             {
@@ -104,30 +168,36 @@ namespace Kinetic.Features.Users
             }
         }
 
-        // POST: api/Users/Login
         [HttpPost]
-        public async Task<ActionResult<LoginResponseDto>> Login(
+        public async Task<IActionResult> Login(
             [FromBody] LoginUserDto loginDto)
         {
             if (string.IsNullOrWhiteSpace(loginDto.Email))
+            {
                 return BadRequest("Email is required.");
+            }
 
             if (string.IsNullOrWhiteSpace(loginDto.Password))
+            {
                 return BadRequest("Password is required.");
+            }
 
             var user = await _service.LoginAsync(loginDto);
 
             if (user == null)
+            {
                 return Unauthorized("Invalid email or password.");
+            }
 
-            var token = _jwtService.GenerateToken(user);
+            var accessToken = _jwtService.GenerateToken(user);
             var refreshToken = _refreshTokenService.GenerateRefreshToken();
+
             await _refreshTokenService.CreateAsync(user.Id, refreshToken);
 
-            return Ok(new LoginResponseDto
+            SetAuthCookies(accessToken, refreshToken);
+
+            return Ok(new
             {
-                Token = token,
-                RefreshToken = refreshToken,
                 User = ToDto(user)
             });
         }
@@ -136,55 +206,96 @@ namespace Kinetic.Features.Users
         [HttpPut("{id}")]
         public async Task<ActionResult<UserDto>> Updateuser(
             string id,
-            [FromBody] UpdateUserDto updateDto
-        )
+            [FromBody] UpdateUserDto updateDto)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
             if (userId == null)
+            {
                 return Unauthorized();
+            }
 
             if (userId != id)
+            {
                 return Forbid();
+            }
 
             var user = await _service.UpdateAsync(id, updateDto);
 
             if (user == null)
+            {
                 return NotFound($"User with id '{id}' not found.");
+            }
 
             return Ok(ToDto(user));
         }
 
-        [HttpPost("refresh")]
-        public async Task<IActionResult> Refresh([FromBody] RefreshTokenDto request)
+        [HttpPost]
+        public async Task<IActionResult> Refresh()
         {
-            if (string.IsNullOrWhiteSpace(request.RefreshToken))
-                return BadRequest("Refresh token is required.");
+            var refreshToken = Request.Cookies["kinetic_refresh_token"];
 
-            var storedToken = await _refreshTokenService.GetByTokenAsync(request.RefreshToken);
+            if (string.IsNullOrWhiteSpace(refreshToken))
+            {
+                return Unauthorized("Refresh token is missing.");
+            }
+
+            var storedToken =
+                await _refreshTokenService.GetByTokenAsync(refreshToken);
 
             if (storedToken == null
                 || storedToken.RevokedAt != null
                 || storedToken.ExpiresAt <= DateTime.UtcNow)
             {
+                ClearAuthCookies();
                 return Unauthorized("Invalid or expired refresh token.");
             }
 
-            var user = await _service.GetByIdAsync(storedToken.UserId.ToString());
+            var user = await _service.GetByIdAsync(
+                storedToken.UserId.ToString());
 
             if (user == null)
+            {
+                ClearAuthCookies();
                 return Unauthorized("Invalid refresh token.");
+            }
 
             await _refreshTokenService.RevokeAsync(storedToken);
 
+            var newAccessToken = _jwtService.GenerateToken(user);
             var newRefreshToken = _refreshTokenService.GenerateRefreshToken();
+
             await _refreshTokenService.CreateAsync(user.Id, newRefreshToken);
 
-            return Ok(new LoginResponseDto
+            SetAuthCookies(newAccessToken, newRefreshToken);
+
+            return Ok(new
             {
-                Token = _jwtService.GenerateToken(user),
-                RefreshToken = newRefreshToken,
                 User = ToDto(user)
+            });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> Logout()
+        {
+            var refreshToken = Request.Cookies["kinetic_refresh_token"];
+
+            if (!string.IsNullOrWhiteSpace(refreshToken))
+            {
+                var storedToken =
+                    await _refreshTokenService.GetByTokenAsync(refreshToken);
+
+                if (storedToken != null && storedToken.RevokedAt == null)
+                {
+                    await _refreshTokenService.RevokeAsync(storedToken);
+                }
+            }
+
+            ClearAuthCookies();
+
+            return Ok(new
+            {
+                Message = "Logged out successfully."
             });
         }
 

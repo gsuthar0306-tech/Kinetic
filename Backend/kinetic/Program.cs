@@ -1,6 +1,8 @@
 using Kinetic.Features.MongoDB;
 using Kinetic.Features.Product;
 using Kinetic.Features.Users;
+using Kinetic.Features.Cart;
+using Kinetic.Features.Favorites;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
@@ -22,7 +24,8 @@ builder.Services.AddCors(options =>
     {
         policy.WithOrigins("http://localhost:5173", "http://127.0.0.1:5173")
             .AllowAnyHeader()
-            .AllowAnyMethod();
+            .AllowAnyMethod()
+            .AllowCredentials();
     });
 });
 
@@ -47,12 +50,15 @@ builder.Services.AddSwaggerGen(options =>
 });
 
 builder.Services.Configure<MongoDbSettings>(
-    builder.Configuration.GetSection("MongoDB"));
+    builder.Configuration.GetSection("MongoDB")
+    );
 
 builder.Services.AddSingleton<MongoDbService>();
 builder.Services.AddSingleton<MongoDbConfig>();
 
 builder.Services.AddSingleton<ProductService>();
+builder.Services.AddSingleton<CartService>();
+builder.Services.AddSingleton<FavoriteService>();
 
 builder.Services.AddSingleton<UserService>();
 builder.Services.AddSingleton<IPasswordService, PasswordService>();
@@ -85,6 +91,15 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 Encoding.UTF8.GetBytes(jwtKey)
             )
         };
+
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                context.Token = context.Request.Cookies["kinetic_access_token"];
+                return Task.CompletedTask;
+            }
+        };
     });
 
 builder.Services.AddAuthorization();
@@ -96,10 +111,13 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-
-app.UseHttpsRedirection();
+else
+{
+    app.UseHttpsRedirection();
+}
 
 app.UseCors("Frontend");
+
 app.UseAuthentication();
 app.UseAuthorization();
 

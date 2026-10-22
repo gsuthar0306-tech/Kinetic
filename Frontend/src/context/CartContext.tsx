@@ -1,101 +1,144 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  type ReactNode,
+} from "react";
 
 import type { Product } from "@/services/products";
+import { useAuth } from "@/context/AuthContext";
+import {
+  addCartItem,
+  getCart,
+  removeCartItem,
+  updateCartQuantity,
+  type CartItem,
+} from "@/services/cartApi";
 
-type CartItem = {
-  product: Product;
-  quantity: number;
-};
-
-type CartContextType = {
+interface CartContextType {
   cartItems: CartItem[];
-  addToCart: (product: Product) => void;
-  removeFromCart: (productId: string) => void;
-  increaseQuantity: (productId: string) => void;
-  decreaseQuantity: (productId: string) => void;
+  isLoading: boolean;
+  addToCart: (product: Product, quantity?: number) => Promise<void>;
+  removeFromCart: (productId: string) => Promise<void>;
+  increaseQuantity: (productId: string) => Promise<void>;
+  decreaseQuantity: (productId: string) => Promise<void>;
   isInCart: (productId: string) => boolean;
-};
+}
 
 const CartContext = createContext<CartContextType | null>(null);
 
-type CartProviderProps = {
+interface CartProviderProps {
   children: ReactNode;
-};
+}
 
 export function CartProvider({ children }: CartProviderProps) {
-  const [cartItems, setCartItems] = useState<CartItem[]>(() => {
-    try {
-      const saved = localStorage.getItem("cart");
-      return saved ? JSON.parse(saved) : [];
-    } catch (error) {
-      console.error("Failed to load cart from localStorage:", error);
-      return [];
-    }
-  });
+  const { user, isAuthenticated, isLoading: isAuthLoading } = useAuth();
+
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    localStorage.setItem("cart", JSON.stringify(cartItems));
-  }, [cartItems]);
+    let isMounted = true;
 
-  const addToCart = (product: Product) => {
-    setCartItems((currentItems) => {
-      const existingItem = currentItems.find(
-        (item) => item.product.id === product.id,
-      );
-
-      if (existingItem) {
-        return currentItems.map((item) =>
-          item.product.id === product.id
-            ? {
-                ...item,
-                quantity: item.quantity + 1,
-              }
-            : item,
-        );
+    async function loadCart() {
+      if (isAuthLoading) {
+        return;
       }
 
-      return [
-        ...currentItems,
-        {
-          product,
-          quantity: 1,
-        },
-      ];
-    });
+      if (!isAuthenticated || !user) {
+        setCartItems([]);
+        setIsLoading(false);
+        return;
+      }
+
+      setIsLoading(true);
+
+      try {
+        const items = await getCart();
+
+        if (isMounted) {
+          setCartItems(items);
+        }
+      } catch (error) {
+        console.error("Failed to load cart:", error);
+
+        if (isMounted) {
+          setCartItems([]);
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    void loadCart();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user?.id, isAuthenticated, isAuthLoading, user]);
+
+  const addToCart = async (product: Product, quantity = 1) => {
+    if (!isAuthenticated || !user) {
+      throw new Error("You must be logged in to modify your cart.");
+    }
+
+    const updatedCart = await addCartItem(product.id, quantity);
+
+    setCartItems(updatedCart);
   };
 
-  const removeFromCart = (productId: string) => {
-    setCartItems((currentItems) =>
-      currentItems.filter((item) => item.product.id !== productId),
-    );
+  const removeFromCart = async (productId: string) => {
+    if (!isAuthenticated || !user) {
+      throw new Error("You must be logged in to modify your cart.");
+    }
+
+    const updatedCart = await removeCartItem(productId);
+
+    setCartItems(updatedCart);
   };
 
-  const increaseQuantity = (productId: string) => {
-    setCartItems((currentItems) =>
-      currentItems.map((item) =>
-        item.product.id === productId
-          ? {
-              ...item,
-              quantity: item.quantity + 1,
-            }
-          : item,
-      ),
-    );
-  };
+  const increaseQuantity = async (productId: string) => {
+    if (!isAuthenticated || !user) {
+      throw new Error("You must be logged in to modify your cart.");
+    }
 
-  const decreaseQuantity = (productId: string) => {
-    setCartItems((currentItems) =>
-      currentItems
-        .map((item) =>
-          item.product.id === productId
-            ? {
-                ...item,
-                quantity: item.quantity - 1,
-              }
-            : item,
-        )
-        .filter((item) => item.quantity > 0),
+    const item = cartItems.find(
+      (cartItem) => cartItem.product.id === productId,
     );
+
+    if (!item) {
+      throw new Error("Product was not found in your cart.");
+    }
+
+    const updatedCart = await updateCartQuantity(productId, item.quantity + 1);
+
+    setCartItems(updatedCart);
+  };
+  const decreaseQuantity = async (productId: string) => {
+    if (!isAuthenticated || !user) {
+      throw new Error("You must be logged in to modify your cart.");
+    }
+
+    const item = cartItems.find(
+      (cartItem) => cartItem.product.id === productId,
+    );
+
+    if (!item) {
+      return;
+    }
+
+    if (item.quantity <= 1) {
+      const updatedCart = await removeCartItem(productId);
+      setCartItems(updatedCart);
+      return;
+    }
+
+    const updatedCart = await updateCartQuantity(productId, item.quantity - 1);
+
+    setCartItems(updatedCart);
   };
 
   const isInCart = (productId: string) => {
@@ -106,6 +149,7 @@ export function CartProvider({ children }: CartProviderProps) {
     <CartContext.Provider
       value={{
         cartItems,
+        isLoading: isLoading || isAuthLoading,
         addToCart,
         removeFromCart,
         increaseQuantity,

@@ -1,3 +1,4 @@
+1;
 import api from "./api";
 
 interface BackendProduct {

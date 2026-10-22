@@ -24,3 +24,13 @@ export async function loginUser(data: LoginData) {
   const response = await api.post("/Users/Login", data);
   return response.data;
 }
+
+export async function refreshUser() {
+  const response = await api.post("/Users/Refresh");
+  return response.data;
+}
+
+export async function logoutUser() {
+  const response = await api.post("/Users/Logout");
+  return response.data;
+}

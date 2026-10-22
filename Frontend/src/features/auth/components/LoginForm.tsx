@@ -39,34 +39,36 @@ export function LoginForm() {
         });
 
         const payload = response?.data ?? response;
-        const user = payload?.user ?? payload;
+        const user = payload?.user ?? payload?.User ?? payload;
 
-        if (!payload?.token) {
+        const userId = user?.id ?? user?.Id;
+
+        if (!userId) {
           throw new Error("Login response did not include a token.");
         }
 
-        login({
-          token: payload.token,
-          refreshToken: payload.refreshToken ?? "",
-          user: {
-            id: user?.Id ?? user?.id ?? "",
-            Firstname: user?.Firstname ?? "",
-            Lastname: user?.Lastname ?? "",
-            email: (user?.Email ?? user?.email ?? values.email).toLowerCase(),
-            role: String(
-              user?.Role ?? user?.role ?? "user",
-            ).toLowerCase() as UserRole,
-          },
-        });
+        const loggedInUser = {
+          id: userId,
+          Firstname: user.Firstname ?? user.firstname ?? "",
+          Lastname: user.Lastname ?? user.lastname ?? "",
+          email: (user.Email ?? user.email ?? values.email).toLowerCase(),
+          role: String(
+            user.Role ?? user.role ?? "user",
+          ).toLowerCase() as UserRole,
+        };
+
+        login(loggedInUser);
 
         setSpinning(true);
-        let ptg = -10;
+        setPercent(0);
+
+        let progress = -10;
 
         const interval = setInterval(() => {
-          ptg += 5;
-          setPercent(ptg);
+          progress += 5;
+          setPercent(progress);
 
-          if (ptg > 120) {
+          if (progress > 120) {
             clearInterval(interval);
             setSpinning(false);
             setPercent(0);
@@ -74,16 +76,20 @@ export function LoginForm() {
         }, 100);
 
         toast.success("Welcome back!");
+
         setTimeout(() => {
-          if (user?.Role === "Admin" || user?.role === "Admin") {
+          if (loggedInUser.role === "admin") {
             navigate("/admin");
-          } else navigate("/");
+          } else {
+            navigate("/");
+          }
         }, 2500);
       } catch (error: any) {
         toast.error("Login failed.", {
           description:
-            error.response?.data ||
-            error.message ||
+            error.response?.data?.message ??
+            error.response?.data ??
+            error.message ??
             "Something went wrong while trying to sign in.",
         });
       }

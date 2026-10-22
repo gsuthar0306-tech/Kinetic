@@ -7,9 +7,9 @@ import AuthLayout from "@/components/layout/auth/AuthLayout";
 import { LoginForm } from "@/features/auth/components/LoginForm";
 import { RegisterForm } from "@/features/auth/components/RegisterForm";
 
-import HomePage from "@/pages/home/HomePage";
-import StorePage from "@/pages/store/StorePage";
-import ProductDetails from "./pages/ProductDetails/ProductDetails";
+import HomePage from "@/features/home/HomePage";
+import StorePage from "@/features/store/StorePage";
+import ProductDetails from "./features/Products/ProductDetails";
 
 import Cart from "./features/UserProfile/components/Cart";
 import Favorites from "./features/UserProfile/components/Favorites";
@@ -18,10 +18,9 @@ import { FavoritesProvider } from "./context/FavoritesContext";
 import { CartProvider } from "./context/CartContext";
 import { AuthProvider } from "./context/AuthContext";
 
-import { Profile } from "./pages/User/Profile";
+import { Profile } from "./features/UserProfile/Profile";
 import UserLayout from "./components/layout/User/UserLayout";
 
-import Admin from "./pages/Admin/Admin";
 import AdminLayout from "./components/layout/Admin/AdminLayout";
 import AdminOrders from "./features/Admin/components/AdminOrders";
 import AdminInventory from "./features/Admin/components/AdminInventory";
@@ -34,6 +33,7 @@ import { Toaster } from "./components/ui/sonner";
 import Order from "./features/UserProfile/components/Order";
 import SAndpassword from "./features/UserProfile/components/SAndpassword";
 import AdminAllusers from "./features/Admin/components/AdminAllusers";
+import AdminDashboard from "./features/Admin/components/AdminDashboard";
 
 function App() {
   return (
@@ -72,7 +72,7 @@ function App() {
 
                 <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
                   <Route element={<AdminLayout />}>
-                    <Route path="/admin" element={<Admin />} />
+                    <Route path="/admin" element={<AdminDashboard />} />
                     <Route path="/admin/allusers" element={<AdminAllusers />} />
                     <Route path="/admin/order" element={<AdminOrders />} />
                     <Route

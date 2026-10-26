@@ -1,68 +1,28 @@
 import { useEffect, useState } from "react";
-import { ArrowLeft, Minus, Plus, Star } from "lucide-react";
-import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { ArrowLeft, Star } from "lucide-react";
 
 import { formatRupees, getProductById, productKeys } from "@/services/products";
 
 import AddtoHeart from "@/components/subComponents/AddtoHeart";
 import AddToBag from "@/components/subComponents/AddToBag";
-import { useQuery } from "@tanstack/react-query";
-
-type ProductDetailState = {
-  from?: "store" | "favorites" | "cart";
-};
 
 const ProductDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const location = useLocation();
-
-  // const [product, setProduct] = useState<Product | null>(null);
-  // const [loading, setLoading] = useState(true);
-  // const [loadError, setLoadError] = useState(false);
 
   const [selectedImage, setSelectedImage] = useState("");
 
-  // const [quantity, setQuantity] = useState(1);
+  const handleGoBack = () => {
+    const historyIndex = window.history.state?.idx;
 
-  const navigationState = location.state as ProductDetailState | null;
-
-  const backPath =
-    navigationState?.from === "favorites"
-      ? "/profile/favorites"
-      : navigationState?.from === "cart"
-        ? "/profile/cart"
-        : "/store";
-
-  const backLabel =
-    navigationState?.from === "favorites"
-      ? "Back to Favorites"
-      : navigationState?.from === "cart"
-        ? "Back to Cart"
-        : "Back to Store";
-
-  // useEffect(() => {
-  //   const loadProduct = async () => {
-  //     if (!id) {
-  //       setLoading(false);
-  //       return;
-  //     }
-
-  //     try {
-  //       const data = await getProductById(id);
-  //       setProduct(data);
-  //       setSelectedImage(data.thumbnail);
-  //     } catch (error) {
-  //       console.error("Failed to load product:", error);
-  //       setLoadError(true);
-  //       setProduct(null);
-  //     } finally {
-  //       setLoading(false);
-  //     }
-  //   };
-
-  //   loadProduct();
-  // }, [id]);
+    if (typeof historyIndex === "number" && historyIndex > 0) {
+      navigate(-1);
+    } else {
+      navigate("/store");
+    }
+  };
 
   const {
     data: product,
@@ -119,10 +79,11 @@ const ProductDetails = () => {
 
         <button
           type="button"
-          onClick={() => navigate("/store")}
-          className="rounded-md bg-slate-950 px-5 py-2 text-sm font-semibold text-white"
+          onClick={handleGoBack}
+          className="flex items-center gap-2 rounded-md bg-slate-950 px-5 py-2 text-sm font-semibold text-white"
         >
-          Back to Store
+          <ArrowLeft className="size-4" />
+          Go back
         </button>
 
         {isError && (
@@ -145,11 +106,11 @@ const ProductDetails = () => {
     <main className="mx-auto max-w-[1440px] p-4 sm:p-6">
       <button
         type="button"
-        onClick={() => navigate(backPath)}
+        onClick={handleGoBack}
         className="mb-4 flex items-center gap-2 text-sm font-medium text-slate-500 transition-colors hover:text-slate-950 sm:mb-6"
       >
         <ArrowLeft className="size-4" />
-        {backLabel}
+        Go back
       </button>
 
       <section className="grid gap-6 sm:gap-8 lg:grid-cols-[auto_1fr] lg:items-start lg:gap-14">
@@ -219,6 +180,7 @@ const ProductDetails = () => {
             <p className="text-2xl font-bold text-slate-950 sm:text-3xl">
               {formatRupees(product.price)}
             </p>
+
             {product.actualPrice > product.price && (
               <p className="text-base text-slate-400 line-through sm:text-lg">
                 {formatRupees(product.actualPrice)}
@@ -238,7 +200,6 @@ const ProductDetails = () => {
             <div className="mt-4 space-y-3 text-sm">
               <div className="flex justify-between gap-4">
                 <span className="text-slate-500">Category</span>
-
                 <span className="text-right font-medium capitalize text-slate-900">
                   {product.category.replaceAll("-", " ")}
                 </span>
@@ -246,7 +207,6 @@ const ProductDetails = () => {
 
               <div className="flex justify-between gap-4">
                 <span className="text-slate-500">Product ID</span>
-
                 <span className="break-all text-right font-medium text-slate-900">
                   #{product.id}
                 </span>
@@ -254,7 +214,6 @@ const ProductDetails = () => {
 
               <div className="flex justify-between gap-4">
                 <span className="text-slate-500">Rating</span>
-
                 <span className="font-medium text-slate-900">
                   {product.rating.toFixed(1)} / 5
                 </span>
@@ -262,7 +221,6 @@ const ProductDetails = () => {
 
               <div className="flex justify-between gap-4">
                 <span className="text-slate-500">Number of ratings</span>
-
                 <span className="font-medium text-slate-900">
                   {product.noOfRatings.toLocaleString("en-IN")}
                 </span>
@@ -270,7 +228,6 @@ const ProductDetails = () => {
 
               <div className="flex justify-between gap-4">
                 <span className="text-slate-500">Subcategory</span>
-
                 <span className="text-right font-medium text-slate-900">
                   {product.subCategory}
                 </span>

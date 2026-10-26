@@ -30,6 +30,14 @@ export interface Product {
   link: string;
 }
 
+export interface ProductFilters {
+  categories?: string[];
+  minPrice?: number;
+  maxPrice?: number;
+  minRating?: number;
+  sort?: string;
+}
+
 export interface PagedProducts {
   items: Product[];
   totalCount: number;
@@ -75,14 +83,22 @@ function mapProduct(product: BackendProduct): Product {
 export async function getProducts(
   page = 1,
   pageSize = 24,
-  categories?: string[],
+  filters: ProductFilters = {},
 ): Promise<PagedProducts> {
   const { data } = await api.get<
     Omit<PagedProducts, "items"> & {
       items: BackendProduct[];
     }
   >("/Products/GetAll", {
-    params: { page, pageSize, categories: categories?.join(",") },
+    params: {
+      page,
+      pageSize,
+      categories: filters.categories?.join(","),
+      minPrice: filters.minPrice,
+      maxPrice: filters.maxPrice,
+      minRating: filters.minRating,
+      sort: filters.sort === "recommended" ? undefined : filters.sort,
+    },
   });
 
   return { ...data, items: data.items.map(mapProduct) };
@@ -91,9 +107,9 @@ export async function getProducts(
 export async function getElectronicProducts(
   page = 1,
   pageSize = 24,
-  categories?: string[],
+  filters: ProductFilters = {},
 ): Promise<PagedProducts> {
-  return getProducts(page, pageSize, categories);
+  return getProducts(page, pageSize, filters);
 }
 
 export async function getProductCategories(): Promise<string[]> {
@@ -111,8 +127,8 @@ export async function getProductById(id: string): Promise<Product> {
 export const productKeys = {
   all: ["electronicProducts"] as const,
 
-  list: (page = 1, pageSize = 24, categories: string[] = []) =>
-    ["electronicProducts", page, pageSize, [...categories].sort()] as const,
+  list: (page = 1, pageSize = 24, filters: ProductFilters = {}) =>
+    ["electronicProducts", page, pageSize, filters] as const,
   categories: ["productCategories"] as const,
   detail: (id: string) => ["productDetails", id] as const,
 };

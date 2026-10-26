@@ -18,11 +18,16 @@ namespace Kinetic.Features.Product
             _logger = logger;
         }
 
+
         [HttpGet]
         public async Task<ActionResult<PagedProductsDto>> GetAll(
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 24,
-            [FromQuery] string? categories = null)
+            [FromQuery] string? categories = null,
+            [FromQuery] double? minPrice = null,
+            [FromQuery] double? maxPrice = null,
+            [FromQuery] double? minRating = null,
+            [FromQuery] string? sort = null)
         {
             if (page < 1)
                 return BadRequest("Page must be greater than zero.");
@@ -30,12 +35,31 @@ namespace Kinetic.Features.Product
             if (pageSize < 1 || pageSize > 100)
                 return BadRequest("Page size must be between 1 and 100.");
 
+            if (minPrice < 0 || maxPrice < 0)
+                return BadRequest("Prices cannot be negative.");
+
+            if (minPrice.HasValue && maxPrice.HasValue &&
+                minPrice.Value > maxPrice.Value)
+                return BadRequest("Minimum price cannot exceed maximum price.");
+
+            if (minRating < 0 || minRating > 5)
+                return BadRequest("Rating must be between 0 and 5.");
+
             var selectedCategories = categories?
-                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                .Split(
+                    ',',
+                    StringSplitOptions.RemoveEmptyEntries |
+                    StringSplitOptions.TrimEntries);
+
             var (products, totalCount) = await _service.GetPageAsync(
                 page,
                 pageSize,
-                selectedCategories);
+                selectedCategories,
+                minPrice,
+                maxPrice,
+                minRating,
+                sort);
+
             return Ok(new PagedProductsDto
             {
                 Items = products.Select(MapToDto).ToList(),
@@ -44,6 +68,7 @@ namespace Kinetic.Features.Product
                 PageSize = pageSize
             });
         }
+
 
         [HttpGet]
         public async Task<ActionResult<List<string>>> GetCategories()
@@ -152,7 +177,9 @@ namespace Kinetic.Features.Product
                 Ratings = rating,
                 NoOfRatings = ratingCount,
                 DiscountPrice = product.DiscountPrice,
-                ActualPrice = product.ActualPrice
+                ActualPrice = product.ActualPrice,
+                DiscountPriceValue = ProductService.ParsePrice(product.DiscountPrice),
+                ActualPriceValue = ProductService.ParsePrice(product.ActualPrice)
             };
         }
     }

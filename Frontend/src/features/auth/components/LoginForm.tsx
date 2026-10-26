@@ -1,8 +1,10 @@
+import { useState } from "react";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import { NavLink, useNavigate } from "react-router";
 import { toast } from "sonner";
 import { Spin } from "antd";
+import { Eye, EyeOff } from "lucide-react";
 import { createPortal } from "react-dom";
 
 import { Button } from "@/components/ui/button";
@@ -18,6 +20,11 @@ export function LoginForm() {
   const { login } = useAuth();
   const [spinning, setSpinning] = React.useState(false);
   const [percent, setPercent] = React.useState(0);
+  const [showPassword, setShowPassword] = useState(false);
+
+  const togglePasswordVisibility = () => {
+    setShowPassword((prev) => !prev);
+  };
 
   const formik = useFormik({
     initialValues: {
@@ -141,16 +148,32 @@ export function LoginForm() {
           <Field>
             <FieldLabel htmlFor="password">Password</FieldLabel>
 
-            <Input
-              id="password"
-              name="password"
-              type="password"
-              placeholder="Enter your password"
-              autoComplete="current-password"
-              value={formik.values.password}
-              onChange={formik.handleChange}
-              onBlur={formik.handleBlur}
-            />
+            <div className="relative w-full">
+              <Input
+                id="password"
+                name="password"
+                type={showPassword ? "text" : "password"}
+                placeholder="Enter your password"
+                autoComplete="current-password"
+                value={formik.values.password}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+                className="pr-10"
+              />
+
+              <button
+                type="button"
+                onClick={togglePasswordVisibility}
+                className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-500 hover:text-slate-700 focus:outline-none"
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? (
+                  <EyeOff className="h-5 w-5" />
+                ) : (
+                  <Eye className="h-5 w-5" />
+                )}
+              </button>
+            </div>
 
             {shouldShowError("password") && formik.errors.password && (
               <p className="text-sm text-red-600">{formik.errors.password}</p>

@@ -2,6 +2,7 @@ using MongoDB.Bson;
 using MongoDB.Driver;
 using Kinetic.Features.MongoDB;
 using System.Globalization;
+using MongoDB.Bson.Serialization;
 
 namespace Kinetic.Features.Product
 {
@@ -14,20 +15,227 @@ namespace Kinetic.Features.Product
             _collection = dbConfig.GetCollection<Product>("products");
         }
 
+
+
         public async Task<(List<Product> Products, long TotalCount)> GetPageAsync(
             int page,
             int pageSize,
-            IReadOnlyCollection<string>? categories = null)
+            IReadOnlyCollection<string>? categories = null,
+            double? minPrice = null,
+            double? maxPrice = null,
+            double? minRating = null,
+            string? sort = null)
         {
-            var filter = categories is { Count: > 0 }
-                ? Builders<Product>.Filter.In(product => product.MainCategory, categories)
-                : Builders<Product>.Filter.Empty;
-            var totalCount = await _collection.CountDocumentsAsync(filter);
-            var products = await _collection.Find(filter)
-                .SortBy(product => product.Id)
-                .Skip((page - 1) * pageSize)
-                .Limit(pageSize)
-                .ToListAsync();
+            var pipeline = new List<BsonDocument>();
+
+            // 1. Filter by the selected categories.
+            if (categories is { Count: > 0 })
+            {
+                pipeline.Add(new BsonDocument(
+                    "$match",
+                    new BsonDocument(
+                        "main_category",
+                        new BsonDocument("$in", new BsonArray(categories))
+                    )
+                ));
+            }
+
+            // 2. Convert the stored price, such as "₹3,999.01",
+            // into a number that MongoDB can compare and sort.
+
+            var priceExpression = new BsonDocument(
+                "$convert",
+                new BsonDocument
+                {
+        {
+            "input",
+            new BsonDocument(
+                "$trim",
+                new BsonDocument(
+                    "input",
+                    new BsonDocument(
+                        "$replaceAll",
+                        new BsonDocument
+                        {
+                            {
+                                "input",
+                                new BsonDocument(
+                                    "$replaceAll",
+                                    new BsonDocument
+                                    {
+                                        {
+                                            "input",
+                                            new BsonDocument(
+                                                "$ifNull",
+                                                new BsonArray
+                                                {
+                                                    "$discount_price",
+                                                    ""
+                                                }
+                                            )
+                                        },
+                                        { "find", "₹" },
+                                        { "replacement", "" }
+                                    }
+                                )
+                            },
+                            { "find", "," },
+                            { "replacement", "" }
+                        }
+                    )
+                )
+            )
+        },
+        { "to", "double" },
+        { "onError", 0 },
+        { "onNull", 0 }
+                }
+            );
+
+            // 3. Convert ratings to numbers, including string values.
+            var ratingExpression = new BsonDocument(
+                "$convert",
+                new BsonDocument
+                {
+            { "input", "$ratings" },
+            { "to", "double" },
+            { "onError", 0 },
+            { "onNull", 0 }
+                }
+            );
+
+            pipeline.Add(new BsonDocument(
+                "$addFields",
+                new BsonDocument
+                {
+            { "_filterPrice", priceExpression },
+            { "_filterRating", ratingExpression }
+                }
+            ));
+
+            // 4. Apply minimum price, maximum price, and minimum rating.
+            var filterConditions = new BsonArray();
+
+            if (minPrice.HasValue)
+            {
+                filterConditions.Add(
+                    new BsonDocument(
+                        "$gte",
+                        new BsonArray { "$_filterPrice", minPrice.Value }
+                    )
+                );
+            }
+
+            if (maxPrice.HasValue)
+            {
+                filterConditions.Add(
+                    new BsonDocument(
+                        "$lte",
+                        new BsonArray { "$_filterPrice", maxPrice.Value }
+                    )
+                );
+            }
+
+            if (minRating.HasValue)
+            {
+                filterConditions.Add(
+                    new BsonDocument(
+                        "$gte",
+                        new BsonArray { "$_filterRating", minRating.Value }
+                    )
+                );
+            }
+
+            if (filterConditions.Count > 0)
+            {
+                pipeline.Add(new BsonDocument(
+                    "$match",
+                    new BsonDocument(
+                        "$expr",
+                        new BsonDocument("$and", filterConditions)
+                    )
+                ));
+            }
+
+            // 5. Choose the requested sort order.
+            var sortDocument = sort switch
+            {
+                "price-low" => new BsonDocument
+        {
+            { "_filterPrice", 1 },
+            { "_id", 1 }
+        },
+
+                "price-high" => new BsonDocument
+        {
+            { "_filterPrice", -1 },
+            { "_id", 1 }
+        },
+
+                "rating" => new BsonDocument
+        {
+            { "_filterRating", -1 },
+            { "_id", 1 }
+        },
+
+                _ => new BsonDocument("_id", 1)
+            };
+
+            // 6. Get the requested page and the total matching count
+            // in the same database aggregation.
+            pipeline.Add(new BsonDocument(
+                "$facet",
+                new BsonDocument
+                {
+            {
+                "items",
+                new BsonArray
+                {
+                    new BsonDocument("$sort", sortDocument),
+                    new BsonDocument("$skip", (page - 1) * pageSize),
+                    new BsonDocument("$limit", pageSize),
+
+                    // Remove temporary fields before deserializing Product.
+                    new BsonDocument(
+                        "$project",
+                        new BsonDocument
+                        {
+                            { "_filterPrice", 0 },
+                            { "_filterRating", 0 }
+                        }
+                    )
+                }
+            },
+            {
+                "metadata",
+                new BsonArray
+                {
+                    new BsonDocument("$count", "totalCount")
+                }
+            }
+                }
+            ));
+
+            var result = await _collection
+                .Aggregate<BsonDocument>(pipeline)
+                .FirstOrDefaultAsync();
+
+            if (result == null)
+            {
+                return (new List<Product>(), 0);
+            }
+
+            var products = result["items"]
+                .AsBsonArray
+                .Select(item =>
+                    BsonSerializer.Deserialize<Product>(item.AsBsonDocument))
+                .ToList();
+
+            var metadata = result["metadata"].AsBsonArray;
+
+            long totalCount = metadata.Count > 0
+                ? metadata[0].AsBsonDocument["totalCount"].ToInt64()
+                : 0;
 
             return (products, totalCount);
         }
@@ -103,6 +311,23 @@ namespace Kinetic.Features.Product
             }
 
             return false;
+        }
+
+        public static double ParsePrice(string? price)
+        {
+            if (string.IsNullOrWhiteSpace(price))
+                return 0;
+
+            string number = new string(
+                price.Where(c => char.IsDigit(c) || c == '.' || c == ',').ToArray()
+            ).Replace(",", "");
+
+            return double.TryParse(
+                number,
+                NumberStyles.Any,
+                CultureInfo.InvariantCulture,
+                out double result
+            ) ? result : 0;
         }
 
         public async Task<Product> CreateAsync(CreateProductDto createDto)

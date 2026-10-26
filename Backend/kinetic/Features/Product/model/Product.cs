@@ -39,5 +39,11 @@ namespace Kinetic.Features.Product
 
         [BsonElement("actual_price")]
         public string ActualPrice { get; set; } = string.Empty;
+
+        [BsonElement("discount_price_value")]
+        public double DiscountPriceValue { get; set; }
+
+        [BsonElement("actual_price_value")]
+        public double ActualPriceValue { get; set; }
     }
 }

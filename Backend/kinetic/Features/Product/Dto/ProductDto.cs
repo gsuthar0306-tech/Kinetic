@@ -36,6 +36,12 @@ namespace Kinetic.Features.Product
 
         [JsonPropertyName("actual_price")]
         public string ActualPrice { get; set; } = string.Empty;
+
+        [JsonPropertyName("discount_price_value")]
+        public double DiscountPriceValue { get; set; }
+
+        [JsonPropertyName("actual_price_value")]
+        public double ActualPriceValue { get; set; }
     }
 
     public class CreateProductDto

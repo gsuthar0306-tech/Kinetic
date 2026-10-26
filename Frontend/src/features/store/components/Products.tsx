@@ -1,14 +1,15 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 
 import { Star } from "lucide-react";
-import { useNavigate } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
 
 import {
   formatRupees,
   getElectronicProducts,
   productKeys,
   type Product,
+  type ProductFilters,
 } from "@/services/products";
 
 import type { StoreFilters } from "./FilterSidebar";
@@ -27,20 +28,52 @@ const gridClasses =
   "grid grid-cols-2 gap-3 p-4 sm:grid-cols-3 sm:gap-4 sm:p-6 lg:grid-cols-4 lg:gap-5";
 
 const Products = ({ filters, sortBy, onResultCountChange }: ProductsProps) => {
-  const [page, setPage] = useState(1);
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const page = Math.max(1, Number(searchParams.get("page")) || 1);
   const pageSize = 24;
 
   const navigate = useNavigate();
 
-  const selectedCategories = filters.categories ?? [];
+  const setPage = (nextPage: number) => {
+    const nextParams = new URLSearchParams(searchParams);
+
+    if (nextPage === 1) {
+      nextParams.delete("page");
+    } else {
+      nextParams.set("page", String(nextPage));
+    }
+
+    setSearchParams(nextParams);
+  };
+
+  // const selectedCategories = filters.categories ?? [];
+  // const { data, isPending, isError, refetch } = useQuery({
+  //   queryKey: productKeys.list(page, pageSize, selectedCategories),
+  //   queryFn: () =>
+  //     getElectronicProducts(
+  //       page,
+  //       pageSize,
+  //       selectedCategories.length > 0 ? selectedCategories : undefined,
+  //     ),
+  //   staleTime: 5 * 60 * 1000,
+  //   placeholderData: (previousData) => previousData,
+  // });
+
+  const requestFilters: ProductFilters = {
+    categories: filters.categories ?? undefined,
+    minPrice: filters.priceRange?.min,
+    maxPrice:
+      filters.priceRange && Number.isFinite(filters.priceRange.max)
+        ? filters.priceRange.max
+        : undefined,
+    minRating: filters.minRating ?? undefined,
+    sort: sortBy,
+  };
+
   const { data, isPending, isError, refetch } = useQuery({
-    queryKey: productKeys.list(page, pageSize, selectedCategories),
-    queryFn: () =>
-      getElectronicProducts(
-        page,
-        pageSize,
-        selectedCategories.length > 0 ? selectedCategories : undefined,
-      ),
+    queryKey: productKeys.list(page, pageSize, requestFilters),
+    queryFn: () => getElectronicProducts(page, pageSize, requestFilters),
     staleTime: 5 * 60 * 1000,
     placeholderData: (previousData) => previousData,
   });
@@ -54,53 +87,53 @@ const Products = ({ filters, sortBy, onResultCountChange }: ProductsProps) => {
     }
   }, [data, onResultCountChange]);
 
-  useEffect(() => {
-    setPage(1);
-  }, [filters, sortBy]);
+  // useEffect(() => {
+  //   setPage(1);
+  // }, [filters, sortBy]);
 
   const handleProductClick = (product: Product) => {
-    navigate(`/product/${product.id}`, {
-      state: { from: "store" },
-    });
+    navigate(`/product/${product.id}`);
   };
 
-  const filteredProducts = useMemo(() => {
-    let result = products;
+  const filteredProducts = products;
 
-    if (filters.categories) {
-      result = result.filter((product) =>
-        filters.categories!.includes(product.category),
-      );
-    }
+  // const filteredProducts = useMemo(() => {
+  //   let result = products;
 
-    if (filters.priceRange) {
-      result = result.filter(
-        (product) =>
-          product.price >= filters.priceRange!.min &&
-          product.price <= filters.priceRange!.max,
-      );
-    }
+  //   if (filters.categories) {
+  //     result = result.filter((product) =>
+  //       filters.categories!.includes(product.category),
+  //     );
+  //   }
 
-    if (filters.minRating) {
-      result = result.filter((product) => product.rating >= filters.minRating!);
-    }
+  //   if (filters.priceRange) {
+  //     result = result.filter(
+  //       (product) =>
+  //         product.price >= filters.priceRange!.min &&
+  //         product.price <= filters.priceRange!.max,
+  //     );
+  //   }
 
-    if (sortBy === "price-low") {
-      result = [...result].sort((first, second) => first.price - second.price);
-    }
+  //   if (filters.minRating) {
+  //     result = result.filter((product) => product.rating >= filters.minRating!);
+  //   }
 
-    if (sortBy === "price-high") {
-      result = [...result].sort((first, second) => second.price - first.price);
-    }
+  //   if (sortBy === "price-low") {
+  //     result = [...result].sort((first, second) => first.price - second.price);
+  //   }
 
-    if (sortBy === "rating") {
-      result = [...result].sort(
-        (first, second) => second.rating - first.rating,
-      );
-    }
+  //   if (sortBy === "price-high") {
+  //     result = [...result].sort((first, second) => second.price - first.price);
+  //   }
 
-    return result;
-  }, [products, filters, sortBy]);
+  //   if (sortBy === "rating") {
+  //     result = [...result].sort(
+  //       (first, second) => second.rating - first.rating,
+  //     );
+  //   }
+
+  //   return result;
+  // }, [products, filters, sortBy]);
 
   if (isPending) {
     return (
@@ -151,15 +184,18 @@ const Products = ({ filters, sortBy, onResultCountChange }: ProductsProps) => {
     return (
       <div className="flex min-h-60 flex-col items-center justify-center gap-6 p-6">
         <p className="text-sm text-slate-600">
-          No matching products on this page.
+          {totalCount === 0
+            ? "No products match your filters."
+            : "There are no products on this page."}
         </p>
-        {page < Math.ceil(totalCount / pageSize) && (
+
+        {page > 1 && (
           <button
             type="button"
-            onClick={() => setPage((current) => current + 1)}
+            onClick={() => setPage(page - 1)}
             className="rounded-md border px-4 py-2 text-sm font-medium hover:bg-slate-50"
           >
-            Check next page
+            Go to previous page
           </button>
         )}
       </div>
@@ -226,7 +262,7 @@ const Products = ({ filters, sortBy, onResultCountChange }: ProductsProps) => {
         <button
           type="button"
           disabled={page === 1}
-          onClick={() => setPage((current) => Math.max(1, current - 1))}
+          onClick={() => setPage(Math.max(1, page - 1))}
           className="rounded-md border px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
         >
           Previous
@@ -237,7 +273,7 @@ const Products = ({ filters, sortBy, onResultCountChange }: ProductsProps) => {
         <button
           type="button"
           disabled={page >= Math.ceil(totalCount / pageSize)}
-          onClick={() => setPage((current) => current + 1)}
+          onClick={() => setPage(page + 1)}
           className="rounded-md border px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
         >
           Next

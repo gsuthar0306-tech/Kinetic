@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import { Star } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router";
+import { Button, Popover, Space } from "antd";
 
 import {
   formatRupees,
@@ -25,7 +26,7 @@ interface ProductsProps {
 }
 
 const gridClasses =
-  "grid grid-cols-2 gap-3 p-4 sm:grid-cols-3 sm:gap-4 sm:p-6 lg:grid-cols-4 lg:gap-5";
+  "grid grid-cols-2 gap-3 p-4 sm:grid-cols-3 sm:gap-4 sm:p-6 lg:grid-cols-5 lg:gap-5";
 
 const Products = ({ filters, sortBy, onResultCountChange }: ProductsProps) => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -47,20 +48,8 @@ const Products = ({ filters, sortBy, onResultCountChange }: ProductsProps) => {
     setSearchParams(nextParams);
   };
 
-  // const selectedCategories = filters.categories ?? [];
-  // const { data, isPending, isError, refetch } = useQuery({
-  //   queryKey: productKeys.list(page, pageSize, selectedCategories),
-  //   queryFn: () =>
-  //     getElectronicProducts(
-  //       page,
-  //       pageSize,
-  //       selectedCategories.length > 0 ? selectedCategories : undefined,
-  //     ),
-  //   staleTime: 5 * 60 * 1000,
-  //   placeholderData: (previousData) => previousData,
-  // });
-
   const requestFilters: ProductFilters = {
+    search: searchParams.get("search")?.trim() || undefined,
     categories: filters.categories ?? undefined,
     minPrice: filters.priceRange?.min,
     maxPrice:
@@ -227,10 +216,28 @@ const Products = ({ filters, sortBy, onResultCountChange }: ProductsProps) => {
                 {product.subCategory && ` · ${product.subCategory}`}
               </p>
 
-              <h2 className="mt-1 truncate text-xs font-semibold text-slate-900 sm:text-sm">
+              {/* <h2 className="mt-1 truncate text-xs font-semibold text-slate-900 sm:text-sm">
                 {product.title}
-              </h2>
-
+              </h2> */}
+              <Popover
+                content={
+                  <div className="w-80 whitespace-normal break-words text-sm leading-6 text-slate-700">
+                    {product.title}
+                  </div>
+                }
+                title="Product Name"
+                trigger="hover"
+                placement="top"
+                styles={{
+                  root: {
+                    maxWidth: "calc(100vw - 32px)",
+                  },
+                }}
+              >
+                <h2 className="mt-1 truncate text-xs font-semibold text-slate-900 sm:text-sm">
+                  {product.title}
+                </h2>
+              </Popover>
               <div className="mt-2 flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
                 <div className="flex flex-wrap items-baseline gap-x-2">
                   <span className="text-xs font-bold text-slate-950 sm:text-sm">

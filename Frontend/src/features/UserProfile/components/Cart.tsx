@@ -1,9 +1,10 @@
 import { Minus, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { useNavigate } from "react-router";
 
 import { useCart } from "@/context/CartContext";
-import { formatRupees } from "@/services/products";
+import { formatRupees, type Product } from "@/services/products";
 
 const Cart = () => {
   const {
@@ -14,9 +15,15 @@ const Cart = () => {
     decreaseQuantity,
   } = useCart();
 
+  const navigate = useNavigate();
+
   const [updatingProductId, setUpdatingProductId] = useState<string | null>(
     null,
   );
+
+  const handleProductClick = (product: Product) => {
+    navigate(`/product/${product.id}`);
+  };
 
   const subtotal = cartItems.reduce(
     (total, item) => total + item.product.price * item.quantity,
@@ -119,15 +126,28 @@ const Cart = () => {
                   key={item.product.id}
                   className="flex gap-4 rounded-xl border border-slate-200 bg-white p-4 transition-all duration-300 hover:shadow-lg"
                 >
-                  <img
-                    src={item.product.thumbnail}
-                    alt={item.product.title}
-                    className="h-28 w-28 rounded-lg object-contain"
-                  />
+                  <button
+                    type="button"
+                    onClick={() => handleProductClick(item.product)}
+                    aria-label={`View ${item.product.title}`}
+                    className="h-28 w-28 shrink-0 rounded-lg"
+                  >
+                    <img
+                      src={item.product.thumbnail}
+                      alt={item.product.title}
+                      className="h-full w-full rounded-lg object-contain"
+                    />
+                  </button>
 
                   <div className="flex min-w-0 flex-1 flex-col justify-between">
                     <div>
-                      <h2 className="font-medium">{item.product.title}</h2>
+                      <button
+                        type="button"
+                        onClick={() => handleProductClick(item.product)}
+                        className="text-left font-medium hover:text-slate-500"
+                      >
+                        {item.product.title}
+                      </button>
 
                       <p className="mt-1 text-sm text-slate-500">
                         {formatRupees(item.product.price)}

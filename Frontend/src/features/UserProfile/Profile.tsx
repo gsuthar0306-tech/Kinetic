@@ -198,7 +198,7 @@ export function Profile() {
             <aside className="space-y-4">
               <button
                 type="button"
-                onClick={() => navigate("/favorites")}
+                onClick={() => navigate("/profile/favorites")}
                 className="group flex w-full items-center justify-between rounded-xl border border-rose-100 bg-white p-5 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
               >
                 <span className="flex items-center gap-4">
@@ -218,7 +218,7 @@ export function Profile() {
               </button>
               <button
                 type="button"
-                onClick={() => navigate("/cart")}
+                onClick={() => navigate("/profile/cart")}
                 className="group flex w-full items-center justify-between rounded-xl border border-amber-100 bg-white p-5 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
               >
                 <span className="flex items-center gap-4">

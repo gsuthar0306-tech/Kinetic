@@ -27,7 +27,8 @@ namespace Kinetic.Features.Product
             [FromQuery] double? minPrice = null,
             [FromQuery] double? maxPrice = null,
             [FromQuery] double? minRating = null,
-            [FromQuery] string? sort = null)
+            [FromQuery] string? sort = null,
+            [FromQuery] string? search = null)
         {
             if (page < 1)
                 return BadRequest("Page must be greater than zero.");
@@ -58,7 +59,8 @@ namespace Kinetic.Features.Product
                 minPrice,
                 maxPrice,
                 minRating,
-                sort);
+                sort,
+                search);
 
             return Ok(new PagedProductsDto
             {

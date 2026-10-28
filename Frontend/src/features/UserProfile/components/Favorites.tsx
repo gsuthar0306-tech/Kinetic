@@ -14,9 +14,7 @@ const Favorites = () => {
   const [removingId, setRemovingId] = useState<string | null>(null);
 
   const handleProductClick = (product: Product) => {
-    navigate(`/product/${product.id}`, {
-      state: { from: "favorites" },
-    });
+    navigate(`/product/${product.id}`);
   };
 
   const handleRemoveFavorite = async (product: Product) => {
@@ -108,15 +106,11 @@ const Favorites = () => {
           {favorites.map((product) => (
             <article
               key={product.id}
-              onClick={() => handleProductClick(product)}
               className="group relative flex flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white p-4 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
             >
               <button
                 type="button"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  void handleRemoveFavorite(product);
-                }}
+                onClick={() => void handleRemoveFavorite(product)}
                 disabled={removingId !== null}
                 aria-label={`Remove ${product.title} from favorites`}
                 className="absolute right-5 top-5 z-10 flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 bg-white/95 shadow-sm backdrop-blur transition-all duration-200 hover:scale-105 hover:border-red-200 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
@@ -124,13 +118,18 @@ const Favorites = () => {
                 <Heart className="h-[18px] w-[18px] fill-red-500 text-red-500" />
               </button>
 
-              <div className="flex h-56 items-center justify-center overflow-hidden rounded-xl bg-gray-50 p-6">
+              <button
+                type="button"
+                onClick={() => handleProductClick(product)}
+                aria-label={`View ${product.title}`}
+                className="flex h-56 w-full items-center justify-center overflow-hidden rounded-xl bg-gray-50 p-6"
+              >
                 <img
                   src={product.thumbnail || ""}
                   alt={product.title || "Product"}
                   className="h-full w-full object-contain transition-transform duration-500 group-hover:scale-105"
                 />
-              </div>
+              </button>
 
               <div className="flex flex-1 flex-col pt-5">
                 <span className="w-fit rounded-full bg-gray-100 px-3 py-1 text-[11px] font-medium uppercase tracking-wide text-gray-500">
@@ -139,9 +138,15 @@ const Favorites = () => {
                     : product.category || "Uncategorized"}
                 </span>
 
-                <h2 className="mt-3 line-clamp-2 min-h-[48px] text-base font-semibold leading-6 text-gray-900">
-                  {product.title || "Untitled Product"}
-                </h2>
+                <button
+                  type="button"
+                  onClick={() => handleProductClick(product)}
+                  className="mt-3 min-h-[48px] text-left text-base font-semibold leading-6 text-gray-900 hover:text-gray-600"
+                >
+                  <span className="line-clamp-2">
+                    {product.title || "Untitled Product"}
+                  </span>
+                </button>
 
                 <div className="mt-3 flex items-center justify-between">
                   <span className="text-lg font-bold text-gray-900">
@@ -160,10 +165,7 @@ const Favorites = () => {
 
                 <button
                   type="button"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    void handleRemoveFavorite(product);
-                  }}
+                  onClick={() => void handleRemoveFavorite(product)}
                   disabled={removingId !== null}
                   className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl py-2 text-xs font-medium text-gray-400 transition-colors hover:text-red-500 disabled:cursor-not-allowed disabled:opacity-50"
                 >

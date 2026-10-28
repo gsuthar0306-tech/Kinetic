@@ -115,7 +115,7 @@ const ProductDetails = () => {
 
       <section className="grid gap-6 sm:gap-8 lg:grid-cols-[auto_1fr] lg:items-start lg:gap-14">
         <div className="mx-auto flex w-full max-w-xl min-w-0 flex-col gap-3 lg:mx-0 lg:w-auto lg:max-w-none lg:flex-row-reverse lg:gap-4">
-          <div className="relative h-72 w-full shrink-0 overflow-hidden rounded-xl bg-slate-100 sm:h-80 lg:size-[520px]">
+          <div className="relative h-72 w-full shrink-0 overflow-hidden rounded-xl border border-slate-100 bg-white sm:h-80 lg:size-[520px]">
             <img
               src={selectedImage}
               alt={product.title}
@@ -192,7 +192,7 @@ const ProductDetails = () => {
 
           <AddToBag product={product} variant="detail" />
 
-          <div className="mt-6 rounded-lg border border-slate-200 p-4 sm:mt-8 sm:p-5">
+          <div className="mt-6 rounded-lg bg-white border border-slate-200 p-4 sm:mt-8 sm:p-5">
             <h2 className="text-sm font-bold text-slate-950">
               Product Information
             </h2>

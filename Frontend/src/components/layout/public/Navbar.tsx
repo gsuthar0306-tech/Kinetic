@@ -2,6 +2,7 @@ import { useNavigate, NavLink } from "react-router";
 import { Heart, Menu, Search, ShoppingBag, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
+import ProductSearch from "./ProductSearch";
 import {
   Sheet,
   SheetContent,
@@ -45,7 +46,7 @@ function Navbar() {
   };
 
   return (
-    <header className="border-b border-slate-200 bg-white/90 backdrop-blur">
+    <header className="border-b border-slate-200 bg-white/90 backdrop-blur relative z-[100] overflow-visible">
       <nav className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-2 px-4 sm:h-18 sm:gap-5 sm:px-8">
         <a
           href="/"
@@ -53,33 +54,28 @@ function Navbar() {
         >
           KINETIC
         </a>
-        <div className="hidden items-center gap-6 lg:flex">
-          {navLinks.map((link) => (
-            <NavLink
-              key={link.href}
-              to={link.href}
-              className={({ isActive }) =>
-                `text-sm font-medium transition-all duration-200 ${
-                  isActive
-                    ? "scale-105 text-slate-950"
-                    : "text-slate-600 hover:scale-105 hover:text-slate-950"
-                }`
-              }
-            >
-              {link.label}
-            </NavLink>
-          ))}
+        <div className="w-full min-w-0 max-w-xs">
+          <ProductSearch />
         </div>
-        <label className="flex w-full items-center gap-2 rounded-full bg-slate-100 px-4 py-2 text-slate-500 md:max-w-xs">
-          <Search className="size-4 shrink-0" />
 
-          <input
-            className="w-full bg-transparent text-sm outline-none placeholder:text-slate-400"
-            type="search"
-            placeholder="Search products"
-          />
-        </label>
         <div className="flex items-center gap-1 text-slate-700">
+          <div className="hidden items-center gap-6 lg:flex mx-5">
+            {navLinks.map((link) => (
+              <NavLink
+                key={link.href}
+                to={link.href}
+                className={({ isActive }) =>
+                  `text-sm font-medium transition-all duration-200 ${
+                    isActive
+                      ? "scale-105 text-slate-950"
+                      : "text-slate-600 hover:scale-105 hover:text-slate-950"
+                  }`
+                }
+              >
+                {link.label}
+              </NavLink>
+            ))}
+          </div>
           <NavLink
             to="/profile/favorites"
             aria-label="Favorites"

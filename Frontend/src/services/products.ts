@@ -1,4 +1,3 @@
-1;
 import api from "./api";
 
 interface BackendProduct {
@@ -31,6 +30,7 @@ export interface Product {
 }
 
 export interface ProductFilters {
+  search?: string;
   categories?: string[];
   minPrice?: number;
   maxPrice?: number;
@@ -60,6 +60,7 @@ function parsePrice(value: string): number {
 function mapProduct(product: BackendProduct): Product {
   const actualPrice = parsePrice(product.actual_price);
   const discountPrice = parsePrice(product.discount_price);
+
   const images = [
     ...new Set([product.image, ...(product.images ?? [])].filter(Boolean)),
   ];
@@ -93,6 +94,7 @@ export async function getProducts(
     params: {
       page,
       pageSize,
+      search: filters.search?.trim() || undefined,
       categories: filters.categories?.join(","),
       minPrice: filters.minPrice,
       maxPrice: filters.maxPrice,
@@ -101,7 +103,10 @@ export async function getProducts(
     },
   });
 
-  return { ...data, items: data.items.map(mapProduct) };
+  return {
+    ...data,
+    items: data.items.map(mapProduct),
+  };
 }
 
 export async function getElectronicProducts(
@@ -121,6 +126,7 @@ export async function getProductById(id: string): Promise<Product> {
   const { data } = await api.get<BackendProduct>(
     `/Products/GetById/${encodeURIComponent(id)}`,
   );
+
   return mapProduct(data);
 }
 
@@ -129,6 +135,8 @@ export const productKeys = {
 
   list: (page = 1, pageSize = 24, filters: ProductFilters = {}) =>
     ["electronicProducts", page, pageSize, filters] as const,
+
   categories: ["productCategories"] as const,
+
   detail: (id: string) => ["productDetails", id] as const,
 };

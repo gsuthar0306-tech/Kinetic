@@ -24,11 +24,46 @@ namespace Kinetic.Features.Product
             double? minPrice = null,
             double? maxPrice = null,
             double? minRating = null,
-            string? sort = null)
+            string? sort = null,
+            string? search = null)
         {
             var pipeline = new List<BsonDocument>();
 
-            // 1. Filter by the selected categories.
+
+            // 1. filter by space
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var searchPattern = System.Text.RegularExpressions.Regex.Escape(search.Trim());
+
+                var searchFields = new BsonArray
+    {
+        new BsonDocument("name",
+            new BsonDocument
+            {
+                { "$regex", searchPattern },
+                { "$options", "i" }
+            }),
+        new BsonDocument("main_category",
+            new BsonDocument
+            {
+                { "$regex", searchPattern },
+                { "$options", "i" }
+            }),
+        new BsonDocument("sub_category",
+            new BsonDocument
+            {
+                { "$regex", searchPattern },
+                { "$options", "i" }
+            })
+    };
+
+                pipeline.Add(new BsonDocument(
+                    "$match",
+                    new BsonDocument("$or", searchFields)
+                ));
+            }
+
+            // 2. Filter by the selected categories.
             if (categories is { Count: > 0 })
             {
                 pipeline.Add(new BsonDocument(

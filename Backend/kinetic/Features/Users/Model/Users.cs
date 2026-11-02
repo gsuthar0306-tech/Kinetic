@@ -4,6 +4,8 @@ using MongoDB.Bson.Serialization.Attributes;
 namespace Kinetic.Features.Users
 {
     public enum UserRole { User, Admin };
+
+    [BsonIgnoreExtraElements]
     public class User
     {
         [BsonId]
@@ -18,9 +20,6 @@ namespace Kinetic.Features.Users
 
         [BsonElement("Lastname")]
         public string Lastname { get; set; } = string.Empty;
-
-        [BsonElement("Age")]
-        public int Age { get; set; }
 
         [BsonElement("Address")]
         public string Address { get; set; } = string.Empty;

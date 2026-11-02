@@ -107,7 +107,7 @@ function ProductSearch() {
           onFocus={() => setIsOpen(true)}
           className="w-full bg-transparent text-sm outline-none placeholder:text-slate-400"
           type="search"
-          placeholder="Search products"
+          placeholder="Name, category, or price"
           aria-label="Search products"
           aria-expanded={isOpen && debouncedSearch.length >= 2}
           autoComplete="off"

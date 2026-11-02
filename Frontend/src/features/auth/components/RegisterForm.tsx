@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import { NavLink, useNavigate } from "react-router";
+import { Eye, EyeOff } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
@@ -14,6 +16,8 @@ const passwordRegex =
 
 export function RegisterForm() {
   const navigate = useNavigate();
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmation, setShowConfirmation] = useState(false);
 
   const formik = useFormik({
     initialValues: {
@@ -69,7 +73,6 @@ export function RegisterForm() {
         await registerUser({
           Firstname: Firstname,
           Lastname: Lastname,
-          Age: 18,
           Number: values.number.trim(),
           Address: "",
           Email: email,
@@ -196,15 +199,30 @@ export function RegisterForm() {
         <Field>
           <FieldLabel htmlFor="password">Password</FieldLabel>
 
-          <Input
-            id="password"
-            name="password"
-            type="password"
-            autoComplete="new-password"
-            value={formik.values.password}
-            onChange={formik.handleChange}
-            onBlur={formik.handleBlur}
-          />
+          <div className="relative w-full">
+            <Input
+              id="password"
+              name="password"
+              type={showPassword ? "text" : "password"}
+              autoComplete="new-password"
+              value={formik.values.password}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              className="pr-10"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((visible) => !visible)}
+              className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-500 hover:text-slate-700 focus:outline-none"
+              aria-label={showPassword ? "Hide password" : "Show password"}
+            >
+              {showPassword ? (
+                <EyeOff className="h-5 w-5" />
+              ) : (
+                <Eye className="h-5 w-5" />
+              )}
+            </button>
+          </div>
 
           {shouldShowError("password") && formik.errors.password && (
             <p className="text-sm text-red-600">{formik.errors.password}</p>
@@ -214,15 +232,32 @@ export function RegisterForm() {
         <Field>
           <FieldLabel htmlFor="confirmation">Confirm password</FieldLabel>
 
-          <Input
-            id="confirmation"
-            name="confirmation"
-            type="password"
-            autoComplete="new-password"
-            value={formik.values.confirmation}
-            onChange={formik.handleChange}
-            onBlur={formik.handleBlur}
-          />
+          <div className="relative w-full">
+            <Input
+              id="confirmation"
+              name="confirmation"
+              type={showConfirmation ? "text" : "password"}
+              autoComplete="new-password"
+              value={formik.values.confirmation}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              className="pr-10"
+            />
+            <button
+              type="button"
+              onClick={() => setShowConfirmation((visible) => !visible)}
+              className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-500 hover:text-slate-700 focus:outline-none"
+              aria-label={
+                showConfirmation ? "Hide confirmation password" : "Show confirmation password"
+              }
+            >
+              {showConfirmation ? (
+                <EyeOff className="h-5 w-5" />
+              ) : (
+                <Eye className="h-5 w-5" />
+              )}
+            </button>
+          </div>
 
           {shouldShowError("confirmation") && formik.errors.confirmation && (
             <p className="text-sm text-red-600">{formik.errors.confirmation}</p>

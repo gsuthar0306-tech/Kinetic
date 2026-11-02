@@ -88,7 +88,6 @@ namespace Kinetic.Features.Users
                 Id = user.Id.ToString(),
                 Firstname = user.Firstname,
                 Lastname = user.Lastname,
-                Age = user.Age,
                 Number = user.Number,
                 Address = user.Address,
                 Email = user.Email,
@@ -131,11 +130,6 @@ namespace Kinetic.Features.Users
             if (string.IsNullOrWhiteSpace(registerDto.Lastname))
             {
                 return BadRequest("Lastname is required.");
-            }
-
-            if (registerDto.Age <= 0)
-            {
-                return BadRequest("Age must be greater than zero.");
             }
 
             if (string.IsNullOrWhiteSpace(registerDto.Number))
@@ -306,7 +300,6 @@ namespace Kinetic.Features.Users
                 Id = user.Id.ToString(),
                 Firstname = user.Firstname,
                 Lastname = user.Lastname,
-                Age = user.Age,
                 Number = user.Number,
                 Address = user.Address,
                 Email = user.Email,

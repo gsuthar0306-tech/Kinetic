@@ -29,38 +29,71 @@ namespace Kinetic.Features.Product
         {
             var pipeline = new List<BsonDocument>();
 
+            var priceExpression = BuildPriceExpression("$discount_price");
+            var actualPriceExpression = BuildPriceExpression("$actual_price");
 
-            // 1. filter by space
+            // 1. Match product text and, for numeric searches, exact prices.
             if (!string.IsNullOrWhiteSpace(search))
             {
                 var searchPattern = System.Text.RegularExpressions.Regex.Escape(search.Trim());
 
                 var searchFields = new BsonArray
-    {
-        new BsonDocument("name",
-            new BsonDocument
             {
-                { "$regex", searchPattern },
-                { "$options", "i" }
-            }),
-        new BsonDocument("main_category",
-            new BsonDocument
-            {
-                { "$regex", searchPattern },
-                { "$options", "i" }
-            }),
-        new BsonDocument("sub_category",
-            new BsonDocument
-            {
-                { "$regex", searchPattern },
-                { "$options", "i" }
-            })
-    };
+                new BsonDocument(
+                    "name",
+                    new BsonDocument
+                    {
+                        { "$regex", searchPattern },
+                        { "$options", "i" }
+                    }
+                ),
+                new BsonDocument(
+                    "main_category",
+                    new BsonDocument
+                    {
+                        { "$regex", searchPattern },
+                        { "$options", "i" }
+                    }
+                ),
+                new BsonDocument(
+                    "sub_category",
+                    new BsonDocument
+                    {
+                        { "$regex", searchPattern },
+                        { "$options", "i" }
+                    }
+                )
+            };
 
-                pipeline.Add(new BsonDocument(
-                    "$match",
-                    new BsonDocument("$or", searchFields)
-                ));
+                if (TryParseSearchPrice(search, out var searchPrice))
+                {
+                    searchFields.Add(
+                        new BsonDocument(
+                            "$expr",
+                            new BsonDocument(
+                                "$or",
+                                new BsonArray
+                                {
+                                    new BsonDocument(
+                                        "$eq",
+                                        new BsonArray { priceExpression, searchPrice }
+                                    ),
+                                    new BsonDocument(
+                                        "$eq",
+                                        new BsonArray { actualPriceExpression, searchPrice }
+                                    )
+                                }
+                            )
+                        )
+                    );
+                }
+
+                pipeline.Add(
+                    new BsonDocument(
+                        "$match",
+                        new BsonDocument("$or", searchFields)
+                    )
+                );
             }
 
             // 2. Filter by the selected categories.
@@ -75,59 +108,7 @@ namespace Kinetic.Features.Product
                 ));
             }
 
-            // 2. Convert the stored price, such as "₹3,999.01",
-            // into a number that MongoDB can compare and sort.
-
-            var priceExpression = new BsonDocument(
-                "$convert",
-                new BsonDocument
-                {
-        {
-            "input",
-            new BsonDocument(
-                "$trim",
-                new BsonDocument(
-                    "input",
-                    new BsonDocument(
-                        "$replaceAll",
-                        new BsonDocument
-                        {
-                            {
-                                "input",
-                                new BsonDocument(
-                                    "$replaceAll",
-                                    new BsonDocument
-                                    {
-                                        {
-                                            "input",
-                                            new BsonDocument(
-                                                "$ifNull",
-                                                new BsonArray
-                                                {
-                                                    "$discount_price",
-                                                    ""
-                                                }
-                                            )
-                                        },
-                                        { "find", "₹" },
-                                        { "replacement", "" }
-                                    }
-                                )
-                            },
-                            { "find", "," },
-                            { "replacement", "" }
-                        }
-                    )
-                )
-            )
-        },
-        { "to", "double" },
-        { "onError", 0 },
-        { "onNull", 0 }
-                }
-            );
-
-            // 3. Convert ratings to numbers, including string values.
+            // 2. Convert ratings to numbers, including string values.
             var ratingExpression = new BsonDocument(
                 "$convert",
                 new BsonDocument
@@ -148,7 +129,7 @@ namespace Kinetic.Features.Product
                 }
             ));
 
-            // 4. Apply minimum price, maximum price, and minimum rating.
+            // 3. Apply minimum price, maximum price, and minimum rating.
             var filterConditions = new BsonArray();
 
             if (minPrice.HasValue)
@@ -192,7 +173,7 @@ namespace Kinetic.Features.Product
                 ));
             }
 
-            // 5. Choose the requested sort order.
+            // 4. Choose the requested sort order.
             var sortDocument = sort switch
             {
                 "price-low" => new BsonDocument
@@ -216,7 +197,7 @@ namespace Kinetic.Features.Product
                 _ => new BsonDocument("_id", 1)
             };
 
-            // 6. Get the requested page and the total matching count
+            // 5. Get the requested page and the total matching count
             // in the same database aggregation.
             pipeline.Add(new BsonDocument(
                 "$facet",
@@ -273,6 +254,69 @@ namespace Kinetic.Features.Product
                 : 0;
 
             return (products, totalCount);
+        }
+
+        private static BsonDocument BuildPriceExpression(string fieldName)
+        {
+            return new BsonDocument(
+                "$convert",
+                new BsonDocument
+                {
+                    {
+                        "input",
+                        new BsonDocument(
+                            "$trim",
+                            new BsonDocument(
+                                "input",
+                                new BsonDocument(
+                                    "$replaceAll",
+                                    new BsonDocument
+                                    {
+                                        {
+                                            "input",
+                                            new BsonDocument(
+                                                "$replaceAll",
+                                                new BsonDocument
+                                                {
+                                                    {
+                                                        "input",
+                                                        new BsonDocument(
+                                                            "$ifNull",
+                                                            new BsonArray { fieldName, "" }
+                                                        )
+                                                    },
+                                                    { "find", "₹" },
+                                                    { "replacement", "" }
+                                                }
+                                            )
+                                        },
+                                        { "find", "," },
+                                        { "replacement", "" }
+                                    }
+                                )
+                            )
+                        )
+                    },
+                    { "to", "double" },
+                    { "onError", 0 },
+                    { "onNull", 0 }
+                }
+            );
+        }
+
+        private static bool TryParseSearchPrice(string search, out double price)
+        {
+            var normalizedSearch = search
+                .Replace("₹", string.Empty)
+                .Replace(",", string.Empty)
+                .Trim();
+
+            return double.TryParse(
+                    normalizedSearch,
+                    NumberStyles.AllowDecimalPoint,
+                    CultureInfo.InvariantCulture,
+                    out price)
+                && price >= 0;
         }
 
         public async Task<List<string>> GetCategoriesAsync()

@@ -16,9 +16,6 @@ namespace Kinetic.Features.Users
         [RegularExpression(@"^[\p{L}][\p{L}\s'-]*$", ErrorMessage = "Lastname can contain only letters, spaces, hyphens, and apostrophes.")]
         public string Lastname { get; set; } = string.Empty;
 
-        [Range(13, 120, ErrorMessage = "Age must be between 13 and 120.")]
-        public int Age { get; set; }
-
         [Required]
         [Phone(ErrorMessage = "Please enter a valid phone number.")]
         [StringLength(20, MinimumLength = 7)]
@@ -50,9 +47,6 @@ namespace Kinetic.Features.Users
         [StringLength(50, MinimumLength = 2)]
         [RegularExpression(@"^[\p{L}][\p{L}\s'-]*$", ErrorMessage = "Lastname can contain only letters, spaces, hyphens, and apostrophes.")]
         public string Lastname { get; set; } = string.Empty;
-
-        [Range(13, 120, ErrorMessage = "Age must be between 13 and 120.")]
-        public int Age { get; set; }
 
         [Required]
         [Phone(ErrorMessage = "Please enter a valid phone number.")]
@@ -105,9 +99,6 @@ namespace Kinetic.Features.Users
         [StringLength(50, MinimumLength = 2)]
         [RegularExpression(@"^[\p{L}][\p{L}\s'-]*$", ErrorMessage = "Lastname can contain only letters, spaces, hyphens, and apostrophes.")]
         public string Lastname { get; set; } = string.Empty;
-
-        [Range(13, 120, ErrorMessage = "Age must be between 13 and 120.")]
-        public int Age { get; set; }
 
         [Required]
         [Phone(ErrorMessage = "Please enter a valid phone number.")]

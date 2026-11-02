@@ -51,60 +51,35 @@ namespace Kinetic.Features.Favorites
             if (product == null)
                 return false;
 
-            var favorite = await _collection
-                .Find(item => item.UserId == userId)
-                .FirstOrDefaultAsync();
+            var now = DateTime.UtcNow;
+            var update = Builders<Favorite>.Update
+                .SetOnInsert(item => item.UserId, userId)
+                .SetOnInsert(item => item.CreatedAt, now)
+                .Set(item => item.UpdatedAt, now)
+                .AddToSet(item => item.ProductIds, productId);
 
-            if (favorite == null)
-            {
-                favorite = new Favorite
-                {
-                    UserId = userId,
-                    ProductIds = [productId],
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
-                };
-
-                await _collection.InsertOneAsync(favorite);
-                return true;
-            }
-
-            if (favorite.ProductIds.Contains(productId))
-                return true;
-
-            favorite.ProductIds.Add(productId);
-            favorite.UpdatedAt = DateTime.UtcNow;
-
-            await _collection.ReplaceOneAsync(
-                item => item.Id == favorite.Id,
-                favorite
+            var result = await _collection.UpdateOneAsync(
+                item => item.UserId == userId,
+                update,
+                new UpdateOptions { IsUpsert = true }
             );
 
-            return true;
+            return result.IsAcknowledged;
         }
 
         public async Task<bool> RemoveAsync(string userId, string productId)
         {
-            var favorite = await _collection
-                .Find(item => item.UserId == userId)
-                .FirstOrDefaultAsync();
+            var update = Builders<Favorite>.Update
+                .Pull(item => item.ProductIds, productId)
+                .Set(item => item.UpdatedAt, DateTime.UtcNow);
 
-            if (favorite == null)
-                return false;
-
-            bool removed = favorite.ProductIds.Remove(productId);
-
-            if (!removed)
-                return false;
-
-            favorite.UpdatedAt = DateTime.UtcNow;
-
-            await _collection.ReplaceOneAsync(
-                item => item.Id == favorite.Id,
-                favorite
+            var result = await _collection.UpdateOneAsync(
+                item => item.UserId == userId &&
+                    item.ProductIds.Contains(productId),
+                update
             );
 
-            return true;
+            return result.ModifiedCount > 0;
         }
 
         public async Task ClearAsync(string userId)

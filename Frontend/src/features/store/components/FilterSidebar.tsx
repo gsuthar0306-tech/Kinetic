@@ -270,6 +270,7 @@ const FilterSidebar = ({ filters, onFiltersChange }: FilterSidebarProps) => {
                     </div>
                   );
                 })}
+
               </div>
             </AccordionContent>
           </AccordionItem>
@@ -304,6 +305,7 @@ const FilterSidebar = ({ filters, onFiltersChange }: FilterSidebarProps) => {
             </AccordionContent>
           </AccordionItem>
         </Accordion>
+
       </section>
     </div>
   );

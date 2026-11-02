@@ -3,7 +3,6 @@ import api from "./api";
 export interface RegisterData {
   Firstname: string;
   Lastname: string;
-  Age: number;
   Number: string;
   Address: string;
   Email: string;

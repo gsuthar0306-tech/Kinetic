@@ -51,7 +51,6 @@ namespace Kinetic.Features.Users
             {
                 Firstname = registerUserDto.Firstname,
                 Lastname = registerUserDto.Lastname,
-                Age = registerUserDto.Age,
                 Number = registerUserDto.Number,
                 Email = registerUserDto.Email,
 
@@ -97,7 +96,6 @@ namespace Kinetic.Features.Users
 
             user.Firstname = updateDto.Firstname;
             user.Lastname = updateDto.Lastname;
-            user.Age = updateDto.Age;
             user.Number = updateDto.Number;
             user.Address = updateDto.Address;
             user.UpdatedAt = DateTime.UtcNow;

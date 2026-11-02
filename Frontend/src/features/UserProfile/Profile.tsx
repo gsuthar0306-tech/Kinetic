@@ -19,13 +19,6 @@ import { Popconfirm } from "antd";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 
-// type Session = {
-//   id: string;
-//   name: string;
-//   email: string;
-//   role: string;
-//   password: string;
-// };
 type OrderItem = {
   productId: string;
   name: string;
@@ -56,24 +49,6 @@ const emptyAddress: Address = {
   country: "",
 };
 
-// function getSession(): Session | null {
-//   const raw = localStorage.getItem("kinetic-session");
-//   return raw ? (JSON.parse(raw) as Session) : null;
-// }
-
-// function getOrdersForUser(email: string): Order[] {
-//   const raw = localStorage.getItem("kinetic-orders");
-//   const all: Order[] = raw ? JSON.parse(raw) : [];
-//   return all.filter((o) => o.email === email);
-// }
-
-// function getAddressForUser(email: string): Address {
-//   const raw = localStorage.getItem(`kinetic-address-${email}`);
-//   return raw
-//     ? { ...emptyAddress, ...(JSON.parse(raw) as Address) }
-//     : emptyAddress;
-// }
-
 export function Profile() {
   const navigate = useNavigate();
   // const [session, setSession] = useState<Session | null>(null);
@@ -97,21 +72,6 @@ export function Profile() {
     console.log(e);
     toast.error("Click on No");
   };
-
-  // useEffect(() => {
-  //   const s = getSession();
-  //   if (!s) {
-  //     navigate("/login");
-  //     return;
-  //   }
-  //   setSession(s);
-  //   setOrders(getOrdersForUser(s.email));
-  //   const savedAddress = getAddressForUser(s.email);
-  //   setAddress(savedAddress);
-  //   setDraftAddress(savedAddress);
-  // }, [navigate]);
-
-  // if (!session) return null;
 
   const totalItems = orders.reduce(
     (sum, o) => sum + o.items.reduce((s, i) => s + i.quantity, 0),

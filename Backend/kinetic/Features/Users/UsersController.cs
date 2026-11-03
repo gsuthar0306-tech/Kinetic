@@ -89,7 +89,6 @@ namespace Kinetic.Features.Users
                 Firstname = user.Firstname,
                 Lastname = user.Lastname,
                 Number = user.Number,
-                Address = user.Address,
                 Email = user.Email,
                 Role = user.Role,
                 CreatedAt = user.CreatedAt,
@@ -224,6 +223,136 @@ namespace Kinetic.Features.Users
             return Ok(ToDto(user));
         }
 
+        [Authorize]
+        [HttpGet]
+        public async Task<IActionResult> GetMyAddresses()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                return Unauthorized();
+            }
+
+            var addresses = await _service.GetAddressesAsync(userId);
+
+            if (addresses == null)
+            {
+                return NotFound("User not found.");
+            }
+
+            return Ok(addresses);
+        }
+
+        [Authorize]
+        [HttpPost]
+        public async Task<IActionResult> AddAddress(
+            [FromBody] CreateUserAddressDto addressDto)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                return Unauthorized();
+            }
+
+            try
+            {
+                var address = await _service.AddAddressAsync(
+                    userId,
+                    addressDto);
+
+                if (address == null)
+                {
+                    return NotFound("User not found.");
+                }
+
+                return Ok(address);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Conflict(ex.Message);
+            }
+        }
+
+        [Authorize]
+        [HttpPut("{addressId}")]
+        public async Task<IActionResult> UpdateAddress(
+            string addressId,
+            [FromBody] UpdateUserAddressDto addressDto)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                return Unauthorized();
+            }
+
+            var address = await _service.UpdateAddressAsync(
+                userId,
+                addressId,
+                addressDto);
+
+            if (address == null)
+            {
+                return NotFound("Address not found.");
+            }
+
+            return Ok(address);
+        }
+
+        [Authorize]
+        [HttpDelete("{addressId}")]
+        public async Task<IActionResult> DeleteAddress(string addressId)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                return Unauthorized();
+            }
+
+            var deleted = await _service.DeleteAddressAsync(
+                userId,
+                addressId);
+
+            if (!deleted)
+            {
+                return NotFound("Address not found.");
+            }
+
+            return Ok(new
+            {
+                Message = "Address deleted successfully."
+            });
+        }
+
+        [Authorize]
+        [HttpPatch("{addressId}")]
+        public async Task<IActionResult> SetDefaultAddress(string addressId)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                return Unauthorized();
+            }
+
+            var updated = await _service.SetDefaultAddressAsync(
+                userId,
+                addressId);
+
+            if (!updated)
+            {
+                return NotFound("Address not found.");
+            }
+
+            return Ok(new
+            {
+                Message = "Default address updated successfully."
+            });
+        }
+
         [HttpPost]
         public async Task<IActionResult> Refresh()
         {
@@ -301,7 +430,6 @@ namespace Kinetic.Features.Users
                 Firstname = user.Firstname,
                 Lastname = user.Lastname,
                 Number = user.Number,
-                Address = user.Address,
                 Email = user.Email,
                 Role = user.Role,
                 CreatedAt = user.CreatedAt,

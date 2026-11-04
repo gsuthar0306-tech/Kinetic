@@ -33,15 +33,19 @@ export function AuthProvider({ children }: AuthProviderProps) {
     async function checkSession() {
       try {
         const response = await refreshUser();
-        const payload = response?.data ?? response;
-        const userData = payload?.user ?? payload?.User;
+        const userData = response?.user ?? response?.User;
 
-        if (!userData?.id && !userData?.Id) {
+        if (!userData) {
+          throw new Error("The server did not return user information.");
+        }
+
+        const userId = userData.id ?? userData.Id;
+        if (!userId) {
           throw new Error("The server did not return user information.");
         }
 
         const restoredUser: AuthUser = {
-          id: userData.id ?? userData.Id,
+          id: userId,
           Firstname: userData.Firstname ?? userData.firstname ?? "",
           Lastname: userData.Lastname ?? userData.lastname ?? "",
           email: userData.email ?? userData.Email ?? "",

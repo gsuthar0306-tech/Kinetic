@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using MongoDB.Bson;
 
 namespace Kinetic.Features.Product
 {
@@ -126,10 +127,10 @@ namespace Kinetic.Features.Product
             product.Image = updateDto.Image;
             product.Images = updateDto.Images;
             product.Link = updateDto.Link;
-            product.Ratings = updateDto.Ratings;
-            product.NoOfRatings = updateDto.NoOfRatings;
-            product.DiscountPrice = updateDto.DiscountPrice;
-            product.ActualPrice = updateDto.ActualPrice;
+            product.Ratings = new BsonDouble(updateDto.Ratings);
+            product.NoOfRatings = new BsonInt64(updateDto.NoOfRatings);
+            product.DiscountPrice = new BsonDecimal128(Decimal128.Parse(updateDto.DiscountPrice));
+            product.ActualPrice = new BsonDecimal128(Decimal128.Parse(updateDto.ActualPrice));
 
             var updatedProduct = await _service.UpdateAsync(id, product);
             if (updatedProduct == null)
@@ -178,10 +179,10 @@ namespace Kinetic.Features.Product
                 Link = product.Link,
                 Ratings = rating,
                 NoOfRatings = ratingCount,
-                DiscountPrice = product.DiscountPrice,
-                ActualPrice = product.ActualPrice,
-                DiscountPriceValue = ProductService.ParsePrice(product.DiscountPrice),
-                ActualPriceValue = ProductService.ParsePrice(product.ActualPrice)
+                DiscountPrice = ProductService.FormatPrice(product.DiscountPrice),
+                ActualPrice = ProductService.FormatPrice(product.ActualPrice),
+                DiscountPriceValue = ProductService.ParsePrice(ProductService.FormatPrice(product.DiscountPrice)),
+                ActualPriceValue = ProductService.ParsePrice(ProductService.FormatPrice(product.ActualPrice))
             };
         }
     }

@@ -4,6 +4,7 @@ using MongoDB.Bson.Serialization.Attributes;
 
 namespace Kinetic.Features.Product
 {
+    [BsonIgnoreExtraElements]
     public class Product
     {
         [BsonId]
@@ -25,16 +26,16 @@ namespace Kinetic.Features.Product
         public string Link { get; set; } = string.Empty;
 
         [BsonElement("ratings")]
-        public int Ratings { get; set; }
+        public BsonValue Ratings { get; set; } = new BsonDouble(0);
 
         [BsonElement("no_of_ratings")]
-        public int NoOfRatings { get; set; }
+        public BsonValue NoOfRatings { get; set; } = new BsonInt64(0);
 
         [BsonElement("discount_price")]
-        public Decimal128 DiscountPrice { get; set; }
+        public BsonValue DiscountPrice { get; set; } = new BsonDecimal128(Decimal128.Zero);
 
         [BsonElement("actual_price")]
-        public Decimal128 ActualPrice { get; set; }
+        public BsonValue ActualPrice { get; set; } = new BsonDecimal128(Decimal128.Zero);
 
         [BsonElement("category")]
         public string Category { get; set; } = string.Empty;

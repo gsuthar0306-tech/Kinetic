@@ -10,18 +10,16 @@ namespace Kinetic.Features.MongoDB
         public MongoDbService(IConfiguration configuration, IOptions<MongoDbSettings> settings)
         {
             string connectionString = configuration.GetConnectionString("MongoDB") ??
-             throw new InvalidOperationException("MongoDB connection string is missing.");
+                configuration["MongoDB:ConnectionString"] ??
+                "mongodb://localhost:27017";
 
             if (string.IsNullOrWhiteSpace(connectionString))
             {
                 throw new InvalidOperationException("MongoDB connection string is missing.");
             }
 
-            if (!connectionString.StartsWith("mongodb+srv://", StringComparison.OrdinalIgnoreCase))
-            {
-                throw new InvalidOperationException(
-                    "MongoDB must be configured with an Atlas mongodb+srv:// connection string.");
-            }
+            if (string.IsNullOrWhiteSpace(settings.Value.DatabaseName))
+                throw new InvalidOperationException("MongoDB database name is missing.");
 
             MongoClient client = new MongoClient(connectionString);
 

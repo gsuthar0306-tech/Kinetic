@@ -1,9 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 
 import { Star } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router";
-import { Button, Popover, Space } from "antd";
+import { Popover } from "antd";
 
 import {
   formatRupees,

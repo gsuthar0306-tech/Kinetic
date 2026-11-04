@@ -19,7 +19,7 @@ export type SideNavbarItem = {
 // }
 const UserSidebar = () => {
   // const [session, setSession] = useState<Session | null>(null);
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   // useEffect(() => {
   //   const s = getSession();
   //   if (!s) {
@@ -71,7 +71,9 @@ const UserSidebar = () => {
           </div>
           <div>
             {/* <span>{session.type}</span> */}
-            <h3 className="font-semibold">{user?.name}</h3>
+            <h3 className="font-semibold">
+              {user.Firstname} {user.Lastname}
+            </h3>
             <h6 className="text-xs text-slate-700">{user?.email}</h6>
           </div>
         </section>

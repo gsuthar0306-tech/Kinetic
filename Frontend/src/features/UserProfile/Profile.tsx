@@ -9,7 +9,7 @@ import {
   UserRound,
   type LucideIcon,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/context/CartContext";
@@ -52,8 +52,8 @@ const emptyAddress: Address = {
 export function Profile() {
   const navigate = useNavigate();
   // const [session, setSession] = useState<Session | null>(null);
-  const { user, logout } = useAuth();
-  const [orders, setOrders] = useState<Order[]>([]);
+  const { user } = useAuth();
+  const orders: Order[] = [];
   const [address, setAddress] = useState<Address>(emptyAddress);
   const [draftAddress, setDraftAddress] = useState<Address>(emptyAddress);
   const [isEditingAddress, setIsEditingAddress] = useState(false);

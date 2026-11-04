@@ -258,6 +258,17 @@ namespace Kinetic.Features.Product
 
         private static BsonDocument BuildPriceExpression(string fieldName)
         {
+            var priceAsString = new BsonDocument(
+                "$convert",
+                new BsonDocument
+                {
+                    { "input", fieldName },
+                    { "to", "string" },
+                    { "onError", "" },
+                    { "onNull", "" }
+                }
+            );
+
             return new BsonDocument(
                 "$convert",
                 new BsonDocument
@@ -282,7 +293,7 @@ namespace Kinetic.Features.Product
                                                         "input",
                                                         new BsonDocument(
                                                             "$ifNull",
-                                                            new BsonArray { fieldName, "" }
+                                                            new BsonArray { priceAsString, "" }
                                                         )
                                                     },
                                                     { "find", "₹" },
@@ -367,6 +378,12 @@ namespace Kinetic.Features.Product
             return false;
         }
 
+        public static bool TryParseRating(double value, out double rating)
+        {
+            rating = value;
+            return double.IsFinite(value);
+        }
+
         public static bool TryParseRatingCount(BsonValue value, out long count)
         {
             count = 0;
@@ -392,6 +409,12 @@ namespace Kinetic.Features.Product
             return false;
         }
 
+        public static bool TryParseRatingCount(long value, out long count)
+        {
+            count = value;
+            return true;
+        }
+
         public static double ParsePrice(string? price)
         {
             if (string.IsNullOrWhiteSpace(price))
@@ -409,6 +432,14 @@ namespace Kinetic.Features.Product
             ) ? result : 0;
         }
 
+        public static string FormatPrice(BsonValue? price)
+        {
+            if (price == null || price.IsBsonNull)
+                return string.Empty;
+
+            return price.IsString ? price.AsString : price.ToString() ?? string.Empty;
+        }
+
         public async Task<Product> CreateAsync(CreateProductDto createDto)
         {
             var createdProduct = new Product
@@ -419,10 +450,10 @@ namespace Kinetic.Features.Product
                 Image = createDto.Image,
                 Images = createDto.Images,
                 Link = createDto.Link,
-                Ratings = createDto.Ratings,
-                NoOfRatings = createDto.NoOfRatings,
-                DiscountPrice = createDto.DiscountPrice,
-                ActualPrice = createDto.ActualPrice
+                Ratings = new BsonDouble(createDto.Ratings),
+                NoOfRatings = new BsonInt64(createDto.NoOfRatings),
+                DiscountPrice = new BsonDecimal128(Decimal128.Parse(createDto.DiscountPrice)),
+                ActualPrice = new BsonDecimal128(Decimal128.Parse(createDto.ActualPrice))
             };
 
             await _collection.InsertOneAsync(createdProduct);

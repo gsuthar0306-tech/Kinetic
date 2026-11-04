@@ -1,4 +1,5 @@
 import api from "./api";
+import { refreshUser as refreshAuthSession } from "./authApi";
 
 export interface RegisterData {
   Firstname: string;
@@ -30,8 +31,7 @@ export async function getUsers() {
 }
 
 export async function refreshUser() {
-  const response = await api.post("/Users/Refresh");
-  return response.data;
+  return refreshAuthSession();
 }
 
 export async function logoutUser() {

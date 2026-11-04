@@ -25,6 +25,10 @@ namespace Kinetic.Features.Users
         [BsonElement("Lastname")]
         public string Lastname { get; set; } = string.Empty;
 
+        // Keep the original single-string address when replacing older user documents.
+        [BsonElement("Address")]
+        public string Address { get; set; } = string.Empty;
+
         [BsonElement("Addresses")]
         public List<UserAddress> Addresses { get; set; } = new();
 

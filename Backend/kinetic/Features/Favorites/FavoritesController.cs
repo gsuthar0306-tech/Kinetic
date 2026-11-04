@@ -52,8 +52,8 @@ namespace Kinetic.Features.Favorites
                 Link = product.Link,
                 Ratings = rating,
                 NoOfRatings = ratingCount,
-                DiscountPrice = product.DiscountPrice,
-                ActualPrice = product.ActualPrice
+                DiscountPrice = ProductService.FormatPrice(product.DiscountPrice),
+                ActualPrice = ProductService.FormatPrice(product.ActualPrice)
             };
         }
 

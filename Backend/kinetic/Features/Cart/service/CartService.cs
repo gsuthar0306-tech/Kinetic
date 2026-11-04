@@ -216,8 +216,8 @@ namespace Kinetic.Features.Cart
                         SubCategory = product.SubCategory,
                         Image = product.Image,
                         Images = product.Images,
-                        DiscountPrice = product.DiscountPrice,
-                        ActualPrice = product.ActualPrice,
+                        DiscountPrice = ProductService.FormatPrice(product.DiscountPrice),
+                        ActualPrice = ProductService.FormatPrice(product.ActualPrice),
                         Rating = rating,
                         NoOfRatings = ratingCount
                     }

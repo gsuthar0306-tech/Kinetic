@@ -1,6 +1,6 @@
 import { ArrowRight, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { motion, useScroll, useSpring, useTransform } from "framer-motion";
+import { motion } from "framer-motion";
 
 import Collections from "@/features/home/components/Collections";
 import TrendingHardware from "@/features/home/components/TrendingHardware";

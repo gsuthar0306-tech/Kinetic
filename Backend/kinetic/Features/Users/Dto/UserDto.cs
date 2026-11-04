@@ -20,6 +20,8 @@ namespace Kinetic.Features.Users
             ErrorMessage = "Lastname can contain only letters, spaces, hyphens, and apostrophes.")]
         public string Lastname { get; set; } = string.Empty;
 
+        public string Address { get; set; } = string.Empty;
+
         [Required]
         [Phone(ErrorMessage = "Please enter a valid phone number.")]
         [StringLength(20, MinimumLength = 7)]
@@ -52,6 +54,8 @@ namespace Kinetic.Features.Users
             @"^[\p{L}][\p{L}\s'-]*$",
             ErrorMessage = "Lastname can contain only letters, spaces, hyphens, and apostrophes.")]
         public string Lastname { get; set; } = string.Empty;
+
+        public string Address { get; set; } = string.Empty;
 
         [Required]
         [Phone(ErrorMessage = "Please enter a valid phone number.")]

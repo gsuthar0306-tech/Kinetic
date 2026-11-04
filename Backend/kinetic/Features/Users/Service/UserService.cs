@@ -57,6 +57,7 @@ namespace Kinetic.Features.Users
             {
                 Firstname = registerUserDto.Firstname,
                 Lastname = registerUserDto.Lastname,
+                Address = registerUserDto.Address,
                 Number = registerUserDto.Number,
                 Email = registerUserDto.Email,
 

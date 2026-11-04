@@ -1,5 +1,5 @@
 import { useNavigate, NavLink } from "react-router";
-import { Heart, Menu, Search, ShoppingBag, UserRound } from "lucide-react";
+import { Heart, Menu, ShoppingBag, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
 import ProductSearch from "./ProductSearch";

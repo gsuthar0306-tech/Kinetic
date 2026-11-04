@@ -1,5 +1,25 @@
 import api from "./api";
 
+interface RefreshUser {
+  id?: string;
+  Id?: string;
+  Firstname?: string;
+  firstname?: string;
+  Lastname?: string;
+  lastname?: string;
+  email?: string;
+  Email?: string;
+  role?: string;
+  Role?: string;
+}
+
+interface RefreshResponse {
+  user?: RefreshUser;
+  User?: RefreshUser;
+}
+
+let refreshRequest: Promise<RefreshResponse> | null = null;
+
 export interface RegisterData {
   Firstname: string;
   Lastname: string;
@@ -24,9 +44,17 @@ export async function loginUser(data: LoginData) {
   return response.data;
 }
 
-export async function refreshUser() {
-  const response = await api.post("/Users/Refresh");
-  return response.data;
+export function refreshUser(): Promise<RefreshResponse> {
+  if (!refreshRequest) {
+    refreshRequest = api
+      .post("/Users/Refresh")
+      .then((response) => response.data as RefreshResponse)
+      .finally(() => {
+        refreshRequest = null;
+      });
+  }
+
+  return refreshRequest;
 }
 
 export async function logoutUser() {

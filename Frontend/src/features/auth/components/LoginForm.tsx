@@ -6,6 +6,8 @@ import { toast } from "sonner";
 import { Spin } from "antd";
 import { Eye, EyeOff } from "lucide-react";
 import { createPortal } from "react-dom";
+import { AnimatePresence, motion } from "framer-motion";
+import { isAxiosError } from "axios";
 
 import { Button } from "@/components/ui/button";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
@@ -13,14 +15,37 @@ import { Input } from "@/components/ui/input";
 import { useAuth } from "@/context/AuthContext";
 import type { UserRole } from "@/features/auth/auth.types";
 import { loginUser } from "@/services/authApi";
-import React from "react";
 
 export function LoginForm() {
   const navigate = useNavigate();
   const { login } = useAuth();
-  const [spinning, setSpinning] = React.useState(false);
-  const [percent, setPercent] = React.useState(0);
+  const [spinning, setSpinning] = useState(false);
+  const [percent, setPercent] = useState(0);
   const [showPassword, setShowPassword] = useState(false);
+
+  const showProgress = async () => {
+    setSpinning(true);
+    setPercent(0);
+    const startedAt = performance.now();
+
+    await new Promise<void>((resolve) => {
+      const interval = window.setInterval(() => {
+        const nextPercent = Math.min(
+          100,
+          Math.floor(((performance.now() - startedAt) / 2400) * 100),
+        );
+        setPercent(nextPercent);
+
+        if (nextPercent === 100) {
+          window.clearInterval(interval);
+          resolve();
+        }
+      }, 30);
+    });
+
+    setSpinning(false);
+    await new Promise((resolve) => window.setTimeout(resolve, 250));
+  };
 
   const togglePasswordVisibility = () => {
     setShowPassword((prev) => !prev);
@@ -65,39 +90,25 @@ export function LoginForm() {
         };
 
         login(loggedInUser);
-
-        setSpinning(true);
-        setPercent(0);
-
-        let progress = -10;
-
-        const interval = setInterval(() => {
-          progress += 5;
-          setPercent(progress);
-
-          if (progress > 120) {
-            clearInterval(interval);
-            setSpinning(false);
-            setPercent(0);
-          }
-        }, 100);
-
+        await showProgress();
         toast.success("Welcome back!");
 
-        setTimeout(() => {
-          if (loggedInUser.role === "admin") {
-            navigate("/admin");
-          } else {
-            navigate("/");
-          }
-        }, 2500);
-      } catch (error: any) {
-        toast.error("Login failed.", {
-          description:
-            error.response?.data?.message ??
+        if (loggedInUser.role === "admin") {
+          navigate("/admin");
+        } else {
+          navigate("/");
+        }
+      } catch (error: unknown) {
+        const errorMessage = isAxiosError(error)
+          ? (error.response?.data?.message ??
             error.response?.data ??
-            error.message ??
-            "Something went wrong while trying to sign in.",
+            error.message)
+          : error instanceof Error
+            ? error.message
+            : "Something went wrong while trying to sign in.";
+
+        toast.error("Login failed.", {
+          description: errorMessage,
         });
       }
     },
@@ -199,13 +210,23 @@ export function LoginForm() {
           </p>
         </FieldGroup>
       </form>
-      {spinning &&
-        createPortal(
-          <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/35 backdrop-blur-sm">
-            <Spin percent={percent} size="large" />
-          </div>,
-          document.body,
-        )}
+      <AnimatePresence>
+        {spinning &&
+          createPortal(
+            <motion.div
+              className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/35 backdrop-blur-sm"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3, ease: "easeOut" }}
+              role="status"
+              aria-live="polite"
+            >
+              <Spin percent={percent} size="large" />
+            </motion.div>,
+            document.body,
+          )}
+      </AnimatePresence>
     </>
   );
 }

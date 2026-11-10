@@ -125,7 +125,7 @@ const AdminAllusers = () => {
       const first = a[field];
       const second = b[field];
 
-      let comparison = 0;
+      let comparison: number;
 
       if (typeof first === "number" && typeof second === "number") {
         comparison = first - second;

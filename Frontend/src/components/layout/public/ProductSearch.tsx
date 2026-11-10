@@ -84,14 +84,14 @@ function ProductSearch() {
   };
 
   return (
-    <div ref={searchRef} className="relative w-full md:max-w-xs">
+    <div ref={searchRef} className="relative w-full min-w-0">
       <form
         onSubmit={(event) => {
           event.preventDefault();
           updateDebouncedSearch.clear();
           openStoreSearch(searchText);
         }}
-        className="flex items-center gap-2 rounded-full bg-slate-100 px-4 py-2 text-slate-500"
+        className="flex min-h-8 items-center gap-2 rounded-full border border-transparent bg-slate-100 px-3 py-1 text-slate-500 transition-colors focus-within:border-blue-200 focus-within:bg-white focus-within:ring-2 focus-within:ring-blue-100 sm:px-4"
       >
         <Search className="size-4 shrink-0" />
 
@@ -105,9 +105,9 @@ function ProductSearch() {
             setIsOpen(true);
           }}
           onFocus={() => setIsOpen(true)}
-          className="w-full bg-transparent text-sm outline-none placeholder:text-slate-400"
+          className="min-w-0 w-full bg-transparent text-sm outline-none placeholder:text-slate-400"
           type="search"
-          placeholder="Name, category, or price"
+          placeholder="Search products"
           aria-label="Search products"
           aria-expanded={isOpen && debouncedSearch.length >= 2}
           autoComplete="off"

@@ -1,168 +1,120 @@
-import { useNavigate, NavLink } from "react-router";
-import { Heart, Menu, ShoppingBag, UserRound } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { NavLink, useNavigate } from "react-router";
+import { Heart, ShoppingBag, UserRound, Home, Grid2X2 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { useCart } from "@/context/CartContext";
 import ProductSearch from "./ProductSearch";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
 
-type NavLinkItem = {
-  label: string;
-  href: string;
-  icon?: React.ComponentType<{ className?: string }>;
-};
-
-const navLinks: NavLinkItem[] = [
-  {
-    label: "Home",
-    href: "/",
-  },
-  {
-    label: "Store",
-    href: "/store",
-  },
+const mobileLinks = [
+  { label: "Home", to: "/", icon: Home, end: true },
+  { label: "Shop", to: "/store", icon: Grid2X2 },
+  { label: "Wishlist", to: "/profile/favorites", icon: Heart },
+  { label: "Cart", to: "/profile/cart", icon: ShoppingBag },
+  { label: "Account", to: "/profile", icon: UserRound },
 ];
 
-function Navbar() {
+export default function Navbar() {
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
+  const { cartItems } = useCart();
+  const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
 
-  const handleUserClick = () => {
-    if (!isAuthenticated) {
-      navigate("/login");
-      return;
-    }
-
-    if (user?.role === "admin") {
-      navigate("/admin");
-    } else {
-      navigate("/profile");
-    }
+  const goAccount = () => {
+    if (!isAuthenticated) navigate("/login");
+    else navigate(user?.role === "admin" ? "/admin" : "/profile");
   };
 
   return (
-    <header className="border-b border-slate-200 bg-white/90 backdrop-blur relative z-[100] overflow-visible">
-      <nav className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-2 px-4 sm:h-18 sm:gap-5 sm:px-8">
-        <a
-          href="/"
-          className="shrink-0 text-lg font-black tracking-[0.14em] text-slate-950 sm:text-xl sm:tracking-[0.18em]"
-        >
-          KINETIC
-        </a>
-        <div className="w-full min-w-0 max-w-xs">
-          <ProductSearch />
-        </div>
-
-        <div className="flex items-center gap-1 text-slate-700">
-          <div className="hidden items-center gap-6 lg:flex mx-5">
-            {navLinks.map((link) => (
+    <>
+      <header className="sticky top-0 z-[100] border-b border-slate-200 bg-white shadow-sm">
+        <div className="mx-auto grid max-w-7xl grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-2 px-4 py-2.5 sm:gap-x-4 sm:px-6 md:grid-cols-[auto_minmax(0,1fr)_auto] md:gap-x-5 lg:grid-cols-[auto_minmax(16rem,1fr)_auto] lg:gap-x-8">
+          <NavLink
+            to="/"
+            className="shrink-0 text-base font-black tracking-[0.12em] text-black sm:text-lg sm:tracking-[0.16em] lg:text-xl"
+          >
+            KINETIC
+          </NavLink>
+          <div className="min-w-0 w-full max-w-[10rem] justify-self-center md:max-w-[14rem] lg:mx-auto lg:max-w-sm">
+            <ProductSearch />
+          </div>
+          <div className="flex items-center justify-self-end gap-1 sm:gap-1.5">
+            <nav
+              aria-label="Main navigation"
+              className="hidden items-center gap-4 md:flex lg:gap-6"
+            >
               <NavLink
-                key={link.href}
-                to={link.href}
+                to="/store"
                 className={({ isActive }) =>
-                  `text-sm font-medium transition-all duration-200 ${
-                    isActive
-                      ? "scale-105 text-slate-950"
-                      : "text-slate-600 hover:scale-105 hover:text-slate-950"
-                  }`
+                  `text-sm font-medium transition-colors ${isActive ? "text-blue-600" : "text-slate-600 hover:text-blue-600"}`
                 }
               >
-                {link.label}
+                Store
               </NavLink>
-            ))}
+              <NavLink
+                to="/profile/favorites"
+                className={({ isActive }) =>
+                  `text-sm font-medium transition-colors ${isActive ? "text-blue-600" : "text-slate-600 hover:text-blue-600"}`
+                }
+              >
+                Wishlist
+              </NavLink>
+            </nav>
+            <button
+              onClick={goAccount}
+              aria-label="Account"
+              className="hidden rounded-full p-1.5 text-slate-700 transition-colors hover:bg-slate-100 md:inline-flex"
+            >
+              <UserRound size={18} />
+            </button>
+            <NavLink
+              to="/profile/cart"
+              aria-label="Cart"
+              className="relative rounded-full p-1.5 text-slate-700 transition-colors hover:bg-slate-100"
+            >
+              <ShoppingBag size={18} />
+              {cartCount > 0 && (
+                <span className="absolute right-0 top-0 flex h-4 min-w-4 items-center justify-center rounded-full bg-blue-600 px-1 text-[10px] font-semibold text-white">
+                  {cartCount}
+                </span>
+              )}
+            </NavLink>
           </div>
-          <NavLink
-            to="/profile/favorites"
-            aria-label="Favorites"
-            className={({ isActive }) =>
-              `hidden rounded-full p-2.5 transition-colors hover:bg-slate-100 sm:block ${
-                isActive ? "text-red-500" : "text-slate-950"
-              }`
-            }
-          >
-            {({ isActive }) => (
-              <Heart
-                className={`size-5 transition-colors ${
-                  isActive ? "fill-red-500 text-red-500" : "text-slate-950"
-                }`}
-              />
-            )}
-          </NavLink>
-          <Button
-            size="icon"
-            onClick={handleUserClick}
-            aria-label={isAuthenticated ? "Profile" : "Login"}
-            className="rounded-full p-2.5 transition-colors hover:bg-slate-100"
-          >
-            <UserRound className="size-5" />
-          </Button>
+        </div>
+      </header>
 
-          <NavLink
-            to={"/profile/cart"}
-            aria-label="Shopping bag"
-            className="rounded-full p-2.5 transition-colors hover:bg-slate-100"
-          >
-            <ShoppingBag className="size-5" />
-          </NavLink>
-
-          <Sheet>
-            <SheetTrigger
-              render={
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="rounded-full lg:hidden"
-                  aria-label="Open menu"
-                />
+      <nav
+        aria-label="Main mobile navigation"
+        className="fixed inset-x-0 bottom-0 z-[120] border-t border-slate-200 bg-white/95 shadow-[0_-5px_20px_rgba(15,23,42,.07)] backdrop-blur md:hidden"
+      >
+        <div className="mx-auto grid max-w-lg grid-cols-5 px-1 pt-1.5 pb-[calc(.35rem+env(safe-area-inset-bottom))]">
+          {mobileLinks.map(({ label, to, icon: Icon, end }) => (
+            <NavLink
+              key={label}
+              to={to}
+              end={end}
+              className={({ isActive }) =>
+                `flex min-h-12 flex-col items-center justify-center gap-1 rounded-lg text-[10px] font-medium ${isActive ? "text-blue-600" : "text-slate-500"}`
               }
             >
-              <Menu className="size-5" />
-            </SheetTrigger>
-
-            <SheetContent side="left">
-              <div className="flex flex-col justify-between h-full">
-                <div>
-                  <SheetHeader>
-                    <SheetTitle>KINETIC</SheetTitle>
-                  </SheetHeader>
-
-                  <nav className="flex flex-col gap-4 p-4">
-                    {navLinks.map((link) => (
-                      <NavLink
-                        key={link.href}
-                        to={link.href}
-                        className={({ isActive }) =>
-                          `text-sm font-medium transition-colors ${
-                            isActive
-                              ? "text-slate-950"
-                              : "text-slate-600 hover:text-slate-950"
-                          }`
-                        }
-                      >
-                        {link.label}
-                      </NavLink>
-                    ))}
-                  </nav>
-                </div>
-                <Button
-                  variant="outline"
-                  className="w-fit border-red-600 bg-transparent text-red-500 hover:bg-red-300/30 m-4"
-                  onClick={handleUserClick}
-                >
-                  Sign out
-                </Button>
-              </div>
-            </SheetContent>
-          </Sheet>
+              {({ isActive }) => (
+                <>
+                  <span
+                    className={`flex h-7 w-9 items-center justify-center rounded-xl ${isActive ? "bg-blue-50" : ""}`}
+                  >
+                    <Icon
+                      size={20}
+                      strokeWidth={isActive ? 2.4 : 1.8}
+                      className={
+                        label === "Wishlist" && isActive ? "fill-blue-100" : ""
+                      }
+                    />
+                  </span>
+                  <span>{label}</span>
+                </>
+              )}
+            </NavLink>
+          ))}
         </div>
       </nav>
-    </header>
+    </>
   );
 }
-
-export default Navbar;

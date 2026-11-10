@@ -94,7 +94,7 @@ const Store = () => {
   };
 
   return (
-    <div className="flex flex-col bg-blue-100/10">
+    <div className="flex flex-col bg-[var(--app-background)]">
       <UnderNav
         sortBy={sortBy}
         onSortChange={updateSort}

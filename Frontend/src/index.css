@@ -3,6 +3,18 @@
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/geist";
 
+:root {
+  --app-background: #fcfdffcb;
+}
+
 html {
   scrollbar-gutter: stable;
+}
+
+body {
+  background-color: var(--app-background);
+}
+
+.ant-layout {
+  background-color: var(--app-background);
 }

@@ -58,8 +58,10 @@ namespace Kinetic.Features.Users
         public string Address { get; set; } = string.Empty;
 
         [Required]
-        [Phone(ErrorMessage = "Please enter a valid phone number.")]
-        [StringLength(20, MinimumLength = 7)]
+        [RegularExpression(
+            @"^[6-9][0-9]{9}$",
+            ErrorMessage = "Please enter a valid 10-digit Indian mobile number.")]
+        [StringLength(10, MinimumLength = 10)]
         public string Number { get; set; } = string.Empty;
 
         [Required]
@@ -119,8 +121,10 @@ namespace Kinetic.Features.Users
         public string Lastname { get; set; } = string.Empty;
 
         [Required]
-        [Phone(ErrorMessage = "Please enter a valid phone number.")]
-        [StringLength(20, MinimumLength = 7)]
+        [RegularExpression(
+            @"^[6-9][0-9]{9}$",
+            ErrorMessage = "Please enter a valid 10-digit Indian mobile number.")]
+        [StringLength(10, MinimumLength = 10)]
         public string Number { get; set; } = string.Empty;
     }
 }

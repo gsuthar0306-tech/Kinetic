@@ -47,8 +47,7 @@ export function RegisterForm() {
         .required("Email is required."),
 
       number: Yup.string()
-        .trim()
-        .matches(/^\+?[0-9][0-9\s()-]*$/, "Enter a valid number.")
+        .matches(/^[6-9]\d{9}$/, "Enter a valid 10-digit Indian mobile number.")
         .required("Number is required."),
 
       password: Yup.string()
@@ -165,10 +164,18 @@ export function RegisterForm() {
             id="number"
             name="number"
             type="tel"
-            placeholder="Phone number"
-            autoComplete="tel"
+            inputMode="numeric"
+            maxLength={10}
+            pattern="[6-9][0-9]{9}"
+            placeholder="10-digit mobile number"
+            autoComplete="tel-national"
             value={formik.values.number}
-            onChange={formik.handleChange}
+            onChange={(event) =>
+              formik.setFieldValue(
+                "number",
+                event.target.value.replace(/\D/g, "").slice(0, 10),
+              )
+            }
             onBlur={formik.handleBlur}
           />
 

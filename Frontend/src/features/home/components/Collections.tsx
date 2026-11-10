@@ -63,7 +63,7 @@ const Collections = () => {
   };
 
   return (
-    <section className="bg-slate-50 px-5 py-14 sm:px-8 sm:py-16 lg:py-20">
+    <section className="bg-transparent px-5 py-14 sm:px-8 sm:py-16 lg:py-20">
       <div className="mx-auto max-w-7xl">
         <p className="text-[10px] font-semibold tracking-[0.2em] text-slate-500">
           COLLECTIONS

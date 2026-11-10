@@ -28,7 +28,7 @@ const TrendingHardware = () => {
   };
 
   return (
-    <section className="bg-white px-5 py-14 sm:px-8 sm:py-16 lg:py-20">
+    <section className="bg-transparent px-5 py-14 sm:px-8 sm:py-16 lg:py-20">
       <div className="mx-auto max-w-7xl">
         <div className="flex items-end justify-between gap-4 border-b border-slate-200 pb-4">
           <div>

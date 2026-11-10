@@ -13,8 +13,10 @@ namespace Kinetic.Features.Users
         public string FullName { get; set; } = string.Empty;
 
         [Required]
-        [Phone]
-        [StringLength(20, MinimumLength = 7)]
+        [RegularExpression(
+            @"^[6-9][0-9]{9}$",
+            ErrorMessage = "Please enter a valid 10-digit Indian mobile number.")]
+        [StringLength(10, MinimumLength = 10)]
         public string Phone { get; set; } = string.Empty;
 
         [Required]

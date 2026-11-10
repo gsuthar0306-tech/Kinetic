@@ -1,3 +1,4 @@
+
 using Kinetic.Features.MongoDB;
 using MongoDB.Bson;
 using MongoDB.Driver;
@@ -57,12 +58,13 @@ namespace Kinetic.Features.Users
             {
                 Firstname = registerUserDto.Firstname,
                 Lastname = registerUserDto.Lastname,
-                Address = registerUserDto.Address,
+
+                // Address is added separately after registration.
+                Address = string.Empty,
+                Addresses = new List<UserAddress>(),
+
                 Number = registerUserDto.Number,
                 Email = registerUserDto.Email,
-
-                // New users start with no saved addresses.
-                Addresses = new List<UserAddress>(),
 
                 PasswordHash = _passwordService.HashPassword(
                     registerUserDto.Password),
@@ -101,12 +103,7 @@ namespace Kinetic.Features.Users
         {
             var user = await GetByIdAsync(userId);
 
-            if (user == null)
-            {
-                return null;
-            }
-
-            return user.Addresses;
+            return user == null ? null : user.Addresses;
         }
 
         public async Task<UserAddress?> AddAddressAsync(
@@ -284,7 +281,7 @@ namespace Kinetic.Features.Users
             user.UpdatedAt = DateTime.UtcNow;
 
             await _collection.ReplaceOneAsync(
-                user => user.Id == userId,
+                existingUser => existingUser.Id == userId,
                 user);
 
             return user;

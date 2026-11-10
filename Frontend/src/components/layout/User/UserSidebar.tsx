@@ -1,11 +1,14 @@
-import { UserRound } from "lucide-react";
-import { NavLink } from "react-router";
-import { Heart, ShoppingBag } from "lucide-react";
+import {
+  Heart,
+  LayoutDashboard,
+  MapPin,
+  Package,
+  ShieldCheck,
+  ShoppingBag,
+} from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { NavLink, useLocation } from "react-router";
 import { useAuth } from "@/context/AuthContext";
-import SinghOut from "@/components/subComponents/SinghOut";
-
-// type Session = { name: string; email: string; type: string };
 
 export type SideNavbarItem = {
   label: string;
@@ -13,98 +16,55 @@ export type SideNavbarItem = {
   icon?: LucideIcon;
 };
 
-// function getSession(): Session | null {
-//   const raw = localStorage.getItem("kinetic-session");
-//   return raw ? (JSON.parse(raw) as Session) : null;
-// }
-const UserSidebar = () => {
-  // const [session, setSession] = useState<Session | null>(null);
+type Item = { label: string; href: string; icon: LucideIcon };
+
+const links: Item[] = [
+  { label: "Overview", href: "/profile", icon: LayoutDashboard },
+  { label: "Orders", href: "/profile/order", icon: Package },
+  { label: "Wishlist", href: "/profile/favorites", icon: Heart },
+  { label: "Bag & Cart", href: "/profile/cart", icon: ShoppingBag },
+  { label: "Addresses", href: "/profile#addresses", icon: MapPin },
+  { label: "Security", href: "/profile/setting&password", icon: ShieldCheck },
+];
+
+export default function UserSidebar() {
   const { user } = useAuth();
-  // useEffect(() => {
-  //   const s = getSession();
-  //   if (!s) {
-  //     navigate("/login");
-  //     return;
-  //   }
-  // }, [navigate]);
+  const { pathname, hash } = useLocation();
 
   if (!user) return null;
 
-  const SideNavLinks: SideNavbarItem[] = [
-    {
-      label: "Overview & Account",
-      href: "/profile",
-    },
-    {
-      label: "Saved Wishlist",
-      href: "/profile/favorites",
-      icon: Heart,
-    },
-    {
-      label: "Cart",
-      href: "/profile/cart",
-      icon: ShoppingBag,
-    },
-    {
-      label: "Order",
-      href: "/profile/order",
-    },
-    {
-      label: "Security & Password",
-      href: "/profile/setting&Password",
-    },
-  ];
-
   return (
-    <>
-      <main className="p-5  my-7 flex flex-col justify-around gap-5">
-        <section className="flex gap-1.5 bg-white shadow-md border border-slate-200 rounded-2xl p-4">
-          {/* <img
-            src="https://m.media-amazon.com/images/M/MV5BMTMyNzkyNDkzMV5BMl5BanBnXkFtZTcwOTMzMTU4Ng@@._V1_.jpg"
-            alt="Userimage"
-            className="h-20 w-auto rounded-full"
-          /> */}
-          <div className="bg border-r border-slate-300 px-1">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-amber-300 text-slate-950">
-              <UserRound className="h-6 w-6" />
-            </div>
-          </div>
-          <div>
-            {/* <span>{session.type}</span> */}
-            <h3 className="font-semibold">
-              {user.Firstname} {user.Lastname}
-            </h3>
-            <h6 className="text-xs text-slate-700">{user?.email}</h6>
-          </div>
-        </section>
-        <section className="bg-white border border-slate-200 shadow-md rounded-2xl p-4">
-          <div className="gap-6 flex flex-col px-3">
-            {SideNavLinks.map((link) => (
-              <NavLink
-                key={link.href}
-                to={link.href}
-                className={({ isActive }) =>
-                  `text-sm font-medium transition-all duration-200 ${
-                    isActive
-                      ? "scale-105 text-slate-950"
-                      : "text-slate-600 hover:scale-105 hover:text-slate-950"
-                  }`
-                }
-              >
-                {link.label}
-                {link.icon &&
-                  (() => {
-                    const Icon = link.icon;
-                    return <Icon className="ml-2 inline-block h-4 w-4" />;
-                  })()}
-              </NavLink>
-            ))}
-          </div>
-        </section>
-        <SinghOut />
-      </main>
-    </>
-  );
-};
+    <aside className="rounded-xl border border-slate-200 bg-white p-2 shadow-sm lg:p-3">
+      <p className="hidden px-2 pb-2 text-[10px] font-semibold uppercase tracking-[.15em] text-slate-400 lg:block">
+        Account portal
+      </p>
+      <nav
+        aria-label="Account navigation"
+        className="grid grid-cols-3 gap-1 md:grid-cols-6 lg:grid-cols-1"
+      >
+        {links.map(({ label, href, icon: Icon }) => (
+          <NavLink
+            key={label}
+            to={href}
+            end={label === "Overview"}
+            className={({ isActive }) => {
+              const isSelected =
+                label === "Addresses"
+                  ? pathname === "/profile" && hash === "#addresses"
+                  : isActive && !(label === "Overview" && hash === "#addresses");
 
-export default UserSidebar;
+              return `flex min-h-10 min-w-0 items-center justify-center gap-1.5 rounded-lg px-1.5 text-[11px] font-medium transition-colors sm:gap-2 sm:px-2 sm:text-xs lg:w-full lg:justify-start lg:px-3 lg:text-sm ${
+                isSelected
+                  ? "bg-blue-50 text-blue-700"
+                  : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+              }`;
+            }}
+          >
+            <Icon size={16} className="shrink-0" />
+            {label}
+          </NavLink>
+        ))}
+      </nav>
+    </aside>
+  );
+}

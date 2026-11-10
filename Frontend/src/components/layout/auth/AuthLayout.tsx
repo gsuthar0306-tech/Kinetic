@@ -1,5 +1,6 @@
 import { ArrowLeft, Sparkles } from "lucide-react";
 import { NavLink, Outlet, useLocation } from "react-router";
+import { AnimatePresence, motion } from "framer-motion";
 
 import LoginImage from "@/assets/images/Gemini_Generated_Image_kk3g18kk3g18kk3g.png";
 
@@ -23,7 +24,7 @@ export default function AuthLayout() {
     pathname === "/register" ? sideContent.register : sideContent.login;
 
   return (
-    <div className="grid min-h-svh bg-slate-100 lg:grid-cols-2">
+    <div className="grid min-h-svh bg-[var(--app-background)] lg:grid-cols-2">
       <aside className="relative hidden overflow-hidden bg-slate-900 lg:block">
         <img
           src={LoginImage}
@@ -44,7 +45,7 @@ export default function AuthLayout() {
         </div>
       </aside>
 
-      <main className="flex min-h-svh flex-col bg-[radial-gradient(circle_at_top_right,_#e0e7ff,_transparent_34%),linear-gradient(135deg,_#f8fafc,_#eef2ff)] p-6 sm:p-8 lg:p-8">
+      <main className="flex min-h-svh flex-col bg-[var(--app-background)] p-6 sm:p-8 lg:p-8">
         <header className="flex items-center justify-between gap-4">
           <NavLink
             to="/"
@@ -61,9 +62,18 @@ export default function AuthLayout() {
           </NavLink>
         </header>
         <div className="flex flex-1 items-center justify-center py-6 sm:py-8">
-          <div className="w-full max-w-md rounded-3xl border border-white/80 bg-white/90 p-6 shadow-xl shadow-slate-300/40 backdrop-blur sm:p-7">
-            <Outlet />
-          </div>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={pathname}
+              className="w-full max-w-md rounded-3xl border border-white/80 bg-white/90 p-6 shadow-xl shadow-slate-300/40 backdrop-blur sm:p-7"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.3, ease: "easeOut" }}
+            >
+              <Outlet />
+            </motion.div>
+          </AnimatePresence>
         </div>
       </main>
     </div>

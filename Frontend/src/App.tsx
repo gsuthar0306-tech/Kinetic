@@ -1,5 +1,7 @@
 import "./App.css";
+import { useEffect, useState } from "react";
 import { Routes, Route } from "react-router";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 
 import PublicLayout from "@/components/layout/public/PublicLayout";
 import AuthLayout from "@/components/layout/auth/AuthLayout";
@@ -36,12 +38,25 @@ import AdminAllusers from "./features/Admin/components/AdminAllusers";
 import AdminDashboard from "./features/Admin/components/AdminDashboard";
 
 function App() {
+  const [isPreloading, setIsPreloading] = useState(true);
+  const prefersReducedMotion = useReducedMotion();
+
+  useEffect(() => {
+    if (prefersReducedMotion) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => setIsPreloading(false), 700);
+    return () => window.clearTimeout(timer);
+  }, [prefersReducedMotion]);
+  const showPreloader = isPreloading && prefersReducedMotion !== true;
+
   return (
     <>
       <AuthProvider>
         <FavoritesProvider>
           <CartProvider>
-            <div className="min-h-screen container mx-auto bg-white">
+            <div className="min-h-screen bg-[var(--app-background)]">
               <Routes>
                 <Route element={<PublicLayout />}>
                   <Route path="/" element={<HomePage />} />
@@ -87,6 +102,38 @@ function App() {
                   </Route>
                 </Route>
               </Routes>
+              <AnimatePresence>
+                {showPreloader && (
+                  <motion.div
+                    className="fixed inset-0 z-[200] flex items-center justify-center bg-[var(--app-background)]"
+                    initial={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.35, ease: "easeOut" }}
+                    aria-label="Loading KINETIC"
+                    role="status"
+                  >
+                    <motion.div
+                      className="flex flex-col items-center gap-5"
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.35, ease: "easeOut" }}
+                    >
+                      <span className="text-xl font-black tracking-[0.2em] text-blue-700">
+                        KINETIC
+                      </span>
+                      <motion.span
+                        className="h-7 w-7 rounded-full border-2 border-blue-100 border-t-blue-600"
+                        animate={{ rotate: 360 }}
+                        transition={{
+                          duration: 0.8,
+                          repeat: Infinity,
+                          ease: "linear",
+                        }}
+                      />
+                    </motion.div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
               <Toaster position="top-right" />
             </div>
           </CartProvider>

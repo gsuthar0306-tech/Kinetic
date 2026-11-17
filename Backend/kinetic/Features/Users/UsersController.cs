@@ -7,74 +7,14 @@ using System.Security.Claims;
 namespace Kinetic.Features.Users
 {
     [ApiController]
-    [Route("api/[controller]/[Action]")]
+    [Route("api/[controller]/[action]")]
     public class UsersController : ControllerBase
     {
         private readonly UserService _service;
-        private readonly JwtService _jwtService;
-        private readonly RefreshTokenService _refreshTokenService;
 
-        public UsersController(
-            UserService service,
-            JwtService jwtService,
-            RefreshTokenService refreshTokenService)
+        public UsersController(UserService service)
         {
             _service = service;
-            _jwtService = jwtService;
-            _refreshTokenService = refreshTokenService;
-        }
-
-        private CookieOptions AccessCookieOptions()
-        {
-            return new CookieOptions
-            {
-                HttpOnly = true,
-                Secure = Request.IsHttps,
-                SameSite = SameSiteMode.Lax,
-                Path = "/",
-                Expires = DateTimeOffset.UtcNow.AddHours(1)
-            };
-        }
-
-        private CookieOptions RefreshCookieOptions()
-        {
-            return new CookieOptions
-            {
-                HttpOnly = true,
-                Secure = Request.IsHttps,
-                SameSite = SameSiteMode.Lax,
-                Path = "/",
-                Expires = DateTimeOffset.UtcNow.AddDays(30)
-            };
-        }
-
-        private void SetAuthCookies(
-            string accessToken,
-            string refreshToken)
-        {
-            Response.Cookies.Append(
-                "kinetic_access_token",
-                accessToken,
-                AccessCookieOptions());
-
-            Response.Cookies.Append(
-                "kinetic_refresh_token",
-                refreshToken,
-                RefreshCookieOptions());
-        }
-
-        private void ClearAuthCookies()
-        {
-            var options = new CookieOptions
-            {
-                HttpOnly = true,
-                Secure = Request.IsHttps,
-                SameSite = SameSiteMode.Lax,
-                Path = "/"
-            };
-
-            Response.Cookies.Delete("kinetic_access_token", options);
-            Response.Cookies.Delete("kinetic_refresh_token", options);
         }
 
         [Authorize(Roles = "Admin")]
@@ -83,7 +23,7 @@ namespace Kinetic.Features.Users
         {
             var users = await _service.GetAllAsync();
 
-            var dtos = users.Select(static user => new UserDto
+            var dtos = users.Select(user => new UserDto
             {
                 Id = user.Id.ToString(),
                 Firstname = user.Firstname,
@@ -113,87 +53,18 @@ namespace Kinetic.Features.Users
             return Ok(ToDto(user));
         }
 
-        [HttpPost]
-        public async Task<ActionResult<UserDto>> Create(
-            [FromBody] RegisterUserDto registerDto)
+        [Authorize(Roles = "Admin")]
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetUserWithOrders(string id)
         {
-            if (User.Identity?.IsAuthenticated == true)
-            {
-                return BadRequest("You are already logged in.");
-            }
-
-            if (string.IsNullOrWhiteSpace(registerDto.Firstname))
-            {
-                return BadRequest("Firstname is required.");
-            }
-
-            if (string.IsNullOrWhiteSpace(registerDto.Lastname))
-            {
-                return BadRequest("Lastname is required.");
-            }
-
-            if (string.IsNullOrWhiteSpace(registerDto.Number))
-            {
-                return BadRequest("Number is required.");
-            }
-
-            if (string.IsNullOrWhiteSpace(registerDto.Email))
-            {
-                return BadRequest("Email is required.");
-            }
-
-            if (string.IsNullOrWhiteSpace(registerDto.Password))
-            {
-                return BadRequest("Password is required.");
-            }
-
-            try
-            {
-                var user = await _service.RegisterAsync(registerDto);
-
-                return CreatedAtAction(
-                    nameof(GetById),
-                    new { id = user.Id.ToString() },
-                    ToDto(user));
-            }
-            catch (InvalidOperationException ex)
-            {
-                return Conflict(ex.Message);
-            }
-        }
-
-        [HttpPost]
-        public async Task<IActionResult> Login(
-            [FromBody] LoginUserDto loginDto)
-        {
-            if (string.IsNullOrWhiteSpace(loginDto.Email))
-            {
-                return BadRequest("Email is required.");
-            }
-
-            if (string.IsNullOrWhiteSpace(loginDto.Password))
-            {
-                return BadRequest("Password is required.");
-            }
-
-            var user = await _service.LoginAsync(loginDto);
+            var user = await _service.GetUserWithOrdersAsync(id);
 
             if (user == null)
             {
-                return Unauthorized("Invalid email or password.");
+                return NotFound($"User with id '{id}' not found.");
             }
 
-            var accessToken = _jwtService.GenerateToken(user);
-            var refreshToken = _refreshTokenService.GenerateRefreshToken();
-
-            await _refreshTokenService.CreateAsync(user.Id, refreshToken);
-
-            SetAuthCookies(accessToken, refreshToken);
-
-            return Ok(new
-            {
-                User = ToDto(user)
-            });
+            return Ok(user);
         }
 
         [Authorize]
@@ -204,7 +75,7 @@ namespace Kinetic.Features.Users
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            if (userId == null)
+            if (string.IsNullOrWhiteSpace(userId))
             {
                 return Unauthorized();
             }
@@ -222,205 +93,6 @@ namespace Kinetic.Features.Users
             }
 
             return Ok(ToDto(user));
-        }
-
-        [Authorize]
-        [HttpGet]
-        public async Task<IActionResult> GetMyAddresses()
-        {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
-            if (string.IsNullOrWhiteSpace(userId))
-            {
-                return Unauthorized();
-            }
-
-            var addresses = await _service.GetAddressesAsync(userId);
-
-            if (addresses == null)
-            {
-                return NotFound("User not found.");
-            }
-
-            return Ok(addresses);
-        }
-
-        [Authorize]
-        [HttpPost]
-        public async Task<IActionResult> AddAddress(
-            [FromBody] CreateUserAddressDto addressDto)
-        {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
-            if (string.IsNullOrWhiteSpace(userId))
-            {
-                return Unauthorized();
-            }
-
-            try
-            {
-                var address = await _service.AddAddressAsync(
-                    userId,
-                    addressDto);
-
-                if (address == null)
-                {
-                    return NotFound("User not found.");
-                }
-
-                return Ok(address);
-            }
-            catch (InvalidOperationException ex)
-            {
-                return Conflict(ex.Message);
-            }
-        }
-
-        [Authorize]
-        [HttpPut("{addressId}")]
-        public async Task<IActionResult> UpdateAddress(
-            string addressId,
-            [FromBody] UpdateUserAddressDto addressDto)
-        {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
-            if (string.IsNullOrWhiteSpace(userId))
-            {
-                return Unauthorized();
-            }
-
-            var address = await _service.UpdateAddressAsync(
-                userId,
-                addressId,
-                addressDto);
-
-            if (address == null)
-            {
-                return NotFound("Address not found.");
-            }
-
-            return Ok(address);
-        }
-
-        [Authorize]
-        [HttpDelete("{addressId}")]
-        public async Task<IActionResult> DeleteAddress(string addressId)
-        {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
-            if (string.IsNullOrWhiteSpace(userId))
-            {
-                return Unauthorized();
-            }
-
-            var deleted = await _service.DeleteAddressAsync(
-                userId,
-                addressId);
-
-            if (!deleted)
-            {
-                return NotFound("Address not found.");
-            }
-
-            return Ok(new
-            {
-                Message = "Address deleted successfully."
-            });
-        }
-
-        [Authorize]
-        [HttpPatch("{addressId}")]
-        public async Task<IActionResult> SetDefaultAddress(string addressId)
-        {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
-            if (string.IsNullOrWhiteSpace(userId))
-            {
-                return Unauthorized();
-            }
-
-            var updated = await _service.SetDefaultAddressAsync(
-                userId,
-                addressId);
-
-            if (!updated)
-            {
-                return NotFound("Address not found.");
-            }
-
-            return Ok(new
-            {
-                Message = "Default address updated successfully."
-            });
-        }
-
-        [HttpPost]
-        public async Task<IActionResult> Refresh()
-        {
-            var refreshToken = Request.Cookies["kinetic_refresh_token"];
-
-            if (string.IsNullOrWhiteSpace(refreshToken))
-            {
-                return Unauthorized("Refresh token is missing.");
-            }
-
-            var storedToken =
-                await _refreshTokenService.GetByTokenAsync(refreshToken);
-
-            if (storedToken == null
-                || storedToken.RevokedAt != null
-                || storedToken.ExpiresAt <= DateTime.UtcNow)
-            {
-                ClearAuthCookies();
-                return Unauthorized("Invalid or expired refresh token.");
-            }
-
-            var user = await _service.GetByIdAsync(
-                storedToken.UserId.ToString());
-
-            if (user == null)
-            {
-                ClearAuthCookies();
-                return Unauthorized("Invalid refresh token.");
-            }
-
-            await _refreshTokenService.RevokeAsync(storedToken);
-
-            var newAccessToken = _jwtService.GenerateToken(user);
-            var newRefreshToken = _refreshTokenService.GenerateRefreshToken();
-
-            await _refreshTokenService.CreateAsync(user.Id, newRefreshToken);
-
-            SetAuthCookies(newAccessToken, newRefreshToken);
-
-            return Ok(new
-            {
-                User = ToDto(user)
-            });
-        }
-
-        [HttpPost]
-        public async Task<IActionResult> Logout()
-        {
-            var refreshToken = Request.Cookies["kinetic_refresh_token"];
-
-            if (!string.IsNullOrWhiteSpace(refreshToken))
-            {
-                var storedToken =
-                    await _refreshTokenService.GetByTokenAsync(refreshToken);
-
-                if (storedToken != null && storedToken.RevokedAt == null)
-                {
-                    await _refreshTokenService.RevokeAsync(storedToken);
-                }
-            }
-
-            ClearAuthCookies();
-
-            return Ok(new
-            {
-                Message = "Logged out successfully."
-            });
         }
 
         private static UserDto ToDto(User user)
